@@ -16,6 +16,9 @@
   'use strict';
   var script = document.currentScript;
   var COUNTRY = (script && script.getAttribute('data-country')) || 'fj';
+  // Optional gender labels (Hawaiʻi uses Kāne / Wahine); other countries keep Male / Female.
+  var MALE = (script && script.getAttribute('data-male-label')) || 'Male';
+  var FEMALE = (script && script.getAttribute('data-female-label')) || 'Female';
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var str = function (v) { return String(v == null ? '' : v).trim(); };
   var clean = function (v) { var t = str(v); return /^(unclassified|unknown|n\/a|-)$/i.test(t) ? '' : t; };
@@ -105,7 +108,7 @@
     bar.innerHTML = seg('Panel D view', 'view', [['time', 'Timeline', ICON.time], ['list', 'List', ICON.list]], 'tablist') +
       seg("Degrees shown", 'stage', [['both', "Master's and PhD", ICON.cap], ['masters', "Master's only", ICON.cap], ['phd', 'PhD only', ICON.cap]]) +
       '<span class="pdf-sep" aria-hidden="true"></span>' +
-      seg('Gender shown', 'gender', [['both', 'Both'], ['male', 'Male', ICON.person('pdf-bi--m')], ['female', 'Female', ICON.person('pdf-bi--f')]]) +
+      seg('Gender shown', 'gender', [['both', 'Both'], ['male', MALE, ICON.person('pdf-bi--m')], ['female', FEMALE, ICON.person('pdf-bi--f')]]) +
       '<span class="pdf-count" aria-live="polite"></span>';
     var list = document.createElement('div');
     list.className = 'pdf-list';
@@ -183,7 +186,7 @@
       var r = {
         stage: stage, sid: sid, gender: gender, year: yr(g), person: [title, plain].filter(Boolean).join(' '), bare: plain, q: fam,
         photo: str(p.photo),
-        first: (gender === 'male' ? 'Male ' : (gender === 'female' ? 'Female ' : '')) + LBL[stage],
+        first: (gender === 'male' ? MALE + ' ' : (gender === 'female' ? FEMALE + ' ' : '')) + LBL[stage],
         field: first(g['Field / Discipline'], g['Field/Discipline'], g['Short Discipline'], g['Broad Discipline']),
         uni: first(g['C_Uni name'], g['O_Uni name'], g['Canonical University Name (C_Uni)']),
         uc: ccFor(first(g.Country, g['University Country']))

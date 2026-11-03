@@ -1,0 +1,248 @@
+name: Refresh Native Hawaiian Master File snapshot
+
+# Sister workflow to refresh-master-file.yml (iTaukei). Runs every 2 hours
+# (offset 5 minutes after the iTaukei run to reduce commit-race odds on
+# main) and on manual dispatch — including the Native Hawaiian Admin Panel's
+# "Refresh from Sheet" / "Force refresh" buttons, which call the GitHub
+# Actions dispatch API for this workflow.
+#
+# Reads the Native Hawaiian Scholars Master Sheet via a service account (read-only),
+# reshapes it with scripts/country_kit/governance_dump.py,
+# transforms + sanitizes, encrypts, and commits. NEVER touches
+# data/itaukei-* files, itaukei_* scripts, or refresh-master-file.yml.
+#
+# Requires GitHub Secrets:
+#   GOOGLE_SERVICE_ACCOUNT_JSON  — raw JSON of a Google Cloud service account
+#                                   key (shared with the iTaukei workflow);
+#                                   needs Viewer access on the Native Hawaiian
+#                                   Master Sheet separately (see docs)
+#   VAVELAB_HAWAII_PASSCODE      — passcode used to derive AES-GCM key for
+#                                   Native Hawaiian data files (distinct from
+#                                   VAVELAB_PASSCODE)
+#
+# Deferred parity item: this workflow intentionally omits a
+# master_file_reconcile.py-equivalent QA step. The iTaukei reconcile
+# script is hard-coded to specific row/column positions on the iTaukei
+# Master-file Dashboard tab; the Native Hawaiian Dashboard tab's layout has not
+# been confirmed to match, so a strict reconcile step would be guessing.
+# This can be added later once the Native Hawaiian Dashboard sheet's QA layout is
+# confirmed.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/refresh-hawaii-master-file.yml"
+      - "scripts/country_kit/governance_dump.py"
+      - "scripts/country_kit/countries/hawaii.json"
+      - "scripts/hawaii_master_file_config.py"
+      - "scripts/hawaii_master_file_transformer.py"
+      - "scripts/country_news.py"
+      - "scripts/hawaii_short_disciplines.py"
+      - "scripts/master_short_disciplines.py"
+      - "scripts/hawaii_encrypt_data.py"
+      - "scripts/hawaii_decrypt_data.py"
+      - "js/hawaii-database-adapter.js"
+      - "js/hawaii-database-master.js"
+  schedule:
+    - cron: "5 */2 * * *"   # every 2 hours, 5 min after the hour (UTC)
+  workflow_dispatch:
+    inputs:
+      force_commit:
+        description: "Commit even when totals drift <2% (heartbeat)"
+        required: false
+        default: "false"
+      dry_run:
+        description: "Run transformer but don't commit"
+        required: false
+        default: "false"
+
+concurrency:
+  group: refresh-hawaii-master-file
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Refreshes, including reruns, must build on the latest published snapshot.
+          ref: main
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+            google-api-python-client \
+            google-auth \
+            cryptography
+
+      - name: Decrypt current snapshot (bootstrap for diff)
+        env:
+          VAVELAB_HAWAII_PASSCODE: ${{ secrets.VAVELAB_HAWAII_PASSCODE }}
+        run: |
+          set -euo pipefail
+          if [ -f data/hawaii-last-master-sync.json.enc ]; then
+            python3 scripts/hawaii_decrypt_data.py --all || \
+              echo "Bootstrap decrypt failed (first run?); continuing"
+          else
+            echo "No prior Native Hawaiian Master-file snapshot; first run"
+          fi
+
+      - name: Stash previous plaintext for diff
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/prev
+          for f in \
+            data/hawaii-last-master-sync.json \
+            data/hawaii-master-aggregates.json \
+            data/hawaii-master-scholars.json \
+            data/hawaii-master-publications.json \
+            data/hawaii-master-authorship.json \
+            data/hawaii-master-researcher-authorship.json \
+            data/hawaii-master-grad-degrees.json \
+            data/hawaii-master-mobility.json \
+            data/hawaii-master-geography.json \
+            data/hawaii-master-positions.json \
+            data/hawaii-master-news.json \
+            data/hawaii-master-geography-coordinates.json \
+            data/hawaii-master-worldpoints.json \
+            data/hawaii-body-composition-master.json; do
+            [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
+          done
+
+      - name: Fetch, sanitize, and transform Native Hawaiian Master file
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          python3 scripts/country_kit/governance_dump.py hawaii --dump-dir /tmp/hawaii-dump > /dev/null
+          python3 scripts/hawaii_master_file_transformer.py \
+            --mode=local \
+            --dump-dir=/tmp/hawaii-dump \
+            --out-dir=data
+
+      - name: Diff vs previous snapshot
+        id: diff
+        run: |
+          set -euo pipefail
+          if [ -f /tmp/prev/hawaii-master-aggregates.json ]; then
+            python3 scripts/master_file_diff.py \
+              --prev=/tmp/prev/hawaii-master-aggregates.json \
+              --curr=data/hawaii-master-aggregates.json \
+              --output=/tmp/hawaii_diff.txt || true
+            echo "delta_pct=$(cat /tmp/diff_pct.txt 2>/dev/null || echo '0')" >> "$GITHUB_OUTPUT"
+          else
+            echo "delta_pct=100" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect plaintext content changes
+        id: changed
+        run: |
+          set -euo pipefail
+          # Only re-encrypt files whose *plaintext* actually changed.
+          # scripts/hawaii_encrypt_data.py generates a fresh AES salt per
+          # run, so a naive re-encrypt would rewrite every .enc even when
+          # the underlying Master-file data is byte-identical. See
+          # scripts/plaintext_changed.py (shared, generic script).
+          #
+          # hawaii-last-master-sync.json embeds startedAt/finishedAt
+          # timestamps, so we exclude it from the plaintext-diff and
+          # rewrite it ONLY when at least one content file changed.
+          CONTENT_FILES=(
+            hawaii-master-scholars.json
+            hawaii-master-publications.json
+            hawaii-master-authorship.json
+            hawaii-master-researcher-authorship.json
+            hawaii-master-grad-degrees.json
+            hawaii-master-mobility.json
+            hawaii-master-geography.json
+            hawaii-master-positions.json
+            hawaii-master-news.json
+            hawaii-master-geography-coordinates.json
+            hawaii-master-aggregates.json
+            hawaii-master-worldpoints.json
+            hawaii-body-composition-master.json
+          )
+          python3 scripts/plaintext_changed.py \
+            --prev-dir=/tmp/prev \
+            --curr-dir=data \
+            "${CONTENT_FILES[@]}" \
+            > /tmp/hawaii_changed.txt
+          CHANGED_COUNT=$(wc -l < /tmp/hawaii_changed.txt | tr -d ' ')
+          echo "content_changed_count=${CHANGED_COUNT}" >> "$GITHUB_OUTPUT"
+          if [ "${CHANGED_COUNT}" = "0" ]; then
+            echo "No plaintext content changes. Skipping encrypt + commit."
+          else
+            echo "Plaintext-changed files:"
+            cat /tmp/hawaii_changed.txt
+          fi
+
+      - name: Encrypt data files
+        if: steps.changed.outputs.content_changed_count != '0'
+        env:
+          VAVELAB_HAWAII_PASSCODE: ${{ secrets.VAVELAB_HAWAII_PASSCODE }}
+        run: |
+          set -euo pipefail
+          # Encrypt ONLY the plaintext-changed content files, plus
+          # hawaii-last-master-sync.json (safe to refresh timestamps when
+          # at least one content file changed).
+          TARGETS=()
+          while IFS= read -r name; do
+            [ -n "$name" ] && TARGETS+=("$name")
+          done < /tmp/hawaii_changed.txt
+          TARGETS+=(hawaii-last-master-sync.json)
+          echo "Encrypting: ${TARGETS[*]}"
+          python3 scripts/hawaii_encrypt_data.py "${TARGETS[@]}"
+
+      - name: Commit
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          FORCE_COMMIT: ${{ github.event.inputs.force_commit }}
+          DELTA_PCT: ${{ steps.diff.outputs.delta_pct }}
+        run: |
+          set -euo pipefail
+          git config user.name "vavelab-bot"
+          git config user.email "bot@vavelab.example"
+          git add \
+            data/hawaii-master-*.json.enc \
+            data/hawaii-body-composition-master.json.enc \
+            data/hawaii-last-master-sync.json.enc
+          if [ -f data/hawaii-share-tokens.json ]; then git add data/hawaii-share-tokens.json; fi
+          if git diff --cached --quiet; then
+            echo "No changes to commit (unexpected — plaintext_changed said yes)"
+            exit 0
+          fi
+          MSG="chore: Native Hawaiian Master-file heartbeat"
+          if [ "${DELTA_PCT}" != "0" ] && [ "$(python3 -c "print(float('$DELTA_PCT') >= 2.0)")" = "True" ]; then
+            MSG="Auto-refresh: Native Hawaiian Master-file snapshot (delta ${DELTA_PCT}%)"
+          fi
+          if [ "${FORCE_COMMIT}" = "true" ]; then
+            MSG="${MSG} [manual]"
+          fi
+          git commit -m "$MSG"
+          # Rebase-retry push (pattern from the iTaukei / Zotero workflows)
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin main && exit 0
+            echo "Push attempt $attempt failed; retrying..."
+            sleep $((attempt * 5))
+          done
+          echo "Failed to push after 3 attempts"
+          exit 1
+
+# Refresh after ResearchSpace publication import, 2026-10-12.
+
+# Refresh after complete seven-repository reconciliation and duplicate audit, 2026-10-12.

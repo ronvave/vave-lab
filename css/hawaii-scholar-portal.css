@@ -1,0 +1,95 @@
+.hawaii-portal{max-width:1040px;margin:30px auto;padding:20px}.hawaii-portal .db-scholar-card{max-width:680px;margin:25px auto}.hawaii-portal .db-items{padding:0;list-style:none}.hawaii-portal-intro{background:#edf5f5;border:1px solid #c3d8db;border-radius:12px;padding:22px;margin-bottom:25px}.tonga-share{background:#b62551!important;color:white!important;margin-top:8px}.tonga-share.copied{background:#167c4b!important}.hawaii-form{max-width:760px;width:calc(100vw - 36px);max-height:88vh;border:0;border-radius:14px;padding:25px;box-sizing:border-box;overflow:auto;color:#163e47}.hawaii-form::backdrop{background:#092f3a99}.hawaii-form form{display:grid;gap:15px}.hawaii-form fieldset{border:1px solid #bdcbcc;border-radius:8px;padding:15px;display:grid;grid-template-columns:1fr 1fr;gap:14px}.hawaii-form label{display:flex;flex-direction:column;gap:5px;font-size:14px}.hawaii-form input,.hawaii-form select,.hawaii-form textarea{font:inherit;border:1px solid #bcc9cc;border-radius:5px;padding:9px;max-width:100%;box-sizing:border-box}.hawaii-form button,.hawaii-geotag{padding:10px 16px;border:1px solid #96b2b7;border-radius:7px;background:#0c5868;color:#fff;cursor:pointer}.hawaii-form [role=status]{white-space:pre-wrap}.hawaii-form .wide{grid-column:1/-1}.hawaii-geotag{margin-top:12px}.hawaii-location{border-top:1px solid #bbb;padding-top:10px}.hawaii-form .checks{display:block}.hawaii-form .checks label{display:flex;flex-direction:row;padding:5px}.hawaii-form .checks input{width:auto}.hawaii-form .remove{background:#fff;color:#a21d35}.hawaii-portal .db-item__tags{pointer-events:none}@media(max-width:600px){.hawaii-form fieldset{grid-template-columns:1fr}.hawaii-portal{padding:12px;margin:8px auto}}
+/* Shared-page parity with Fiji: context, live summaries and readable review guidance. */
+.hawaii-profile-header{padding:18px max(20px,calc((100% - 1040px)/2));border-bottom:1px solid #d8d5cc;background:var(--color-bg,#f8f7f2)}
+.hawaii-portal-intro p{line-height:1.65;margin:0 0 12px}.hawaii-portal-intro p:last-child{margin-bottom:0}.hawaii-portal-intro strong{color:#006c7b}.hawaii-portal-intro a{color:#007c9a;text-decoration:underline}
+.direct-review-badge{display:inline-block;border:1px solid #edb536;border-radius:999px;background:#fff9e4;color:#946100;font-size:12px;font-weight:700;padding:6px 10px;margin-bottom:12px}
+.direct-review-callout{background:#fff3be;border-left:4px solid #d9a200;border-radius:9px;padding:12px 14px}
+.hawaii-summary-heading{font:700 1rem Arial,sans-serif;margin:20px 0 10px}.hawaii-summary{margin-bottom:22px;padding:18px;border:1px solid #c3d8db;border-radius:14px;position:relative}.hawaii-summary .db-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.hawaii-summary .db-kpi{min-width:0}.hawaii-summary .db-section__hint{margin:7px 0 12px}.hawaii-publications-head h2{font-size:1.2rem;margin:0 0 8px}.scholar-geotag-highlight{background:#ffeb3b;color:#111!important;padding:1px 3px}.hawaii-review-notice{background:#fff7e4;border-left:4px solid #d28300;border-radius:6px;padding:12px 14px;line-height:1.5}.hawaii-form legend{font-weight:700}.hawaii-form h2{margin-top:0}
+@media(max-width:700px){.hawaii-summary .db-kpis{grid-template-columns:1fr}.page-banner__inner{flex-wrap:wrap;gap:15px}.hawaii-profile-header{padding:15px}.hawaii-portal{box-sizing:border-box;width:100%}}
+
+/* Fiji-style inline publication geography, scoped to the Hawaiʻi shared page. */
+.hawaii-portal .hawaii-geography-list{display:grid;gap:12px}
+.hawaii-portal .hawaii-geography-item{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:20px;margin:0;padding:14px 16px;overflow:visible;max-width:none;box-sizing:border-box}
+.hawaii-publication-content{min-width:0}.hawaii-publication-content .db-item__title{padding-right:0}.hawaii-publication-content .db-item__topline{flex-wrap:wrap}.hawaii-publication-content .db-item__link{position:static;font-size:12px;padding:4px 10px}.hawaii-approved-locations{font-size:12px;color:#4b626a;line-height:1.5}
+.hawaii-geo-toolbar{display:flex;flex-direction:column;gap:8px;min-width:0;align-self:start}
+.hawaii-geo-menu summary,.hawaii-geo-other{box-sizing:border-box;width:100%;min-height:38px;border:1px solid #cbd5d8;border-radius:999px;background:#fff;color:#174852;font:600 13px Arial,sans-serif;padding:9px 12px}
+.hawaii-geo-menu summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}.hawaii-geo-menu summary::-webkit-details-marker{display:none}.hawaii-geo-menu[open] summary{border-color:#0e7490}.hawaii-geo-count:not([hidden]){background:#0e7490;border-radius:12px;color:white;font-size:11px;min-width:18px;padding:2px;text-align:center}
+.hawaii-geo-options{margin-top:7px;padding:8px;border:1px solid #cbd5d8;border-radius:10px;max-height:360px;overflow:auto;background:#fff;box-shadow:0 4px 12px #123f471a}
+.hawaii-geo-options label{display:flex;align-items:flex-start;gap:8px;padding:7px 4px;font-size:13px;line-height:1.4;cursor:pointer}.hawaii-geo-options input{margin-top:3px;flex:none;accent-color:#0e7490}.hawaii-geo-options label:hover{background:#edf5f5}.hawaii-geo-options .hawaii-geo-group{border-top:1px solid #e1e7e8;font-weight:700}.hawaii-geo-options .hawaii-geo-island{padding-left:16px}
+.hawaii-geo-other::placeholder{color:#174852;opacity:1}.hawaii-geo-other:focus{border-color:#0e7490}.hawaii-geo-item-status{font-size:12px;color:#006b7b;margin:0}.hawaii-geo-item-status:empty{display:none}
+.hawaii-geo-submit{border:1px solid #c3d8db;border-radius:12px;padding:20px;background:#fff;margin-top:16px}.hawaii-geo-submit h3{margin:0 0 8px}.hawaii-geo-submit p{line-height:1.5}.hawaii-geo-submit fieldset{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:12px;border:0;padding:0;margin:16px 0}.hawaii-geo-submit legend{font-weight:700;margin-bottom:8px}.hawaii-geo-submit label{font-size:13px;display:flex;flex-direction:column;gap:5px}.hawaii-geo-submit input,.hawaii-geo-submit select{box-sizing:border-box;max-width:100%;min-width:0;padding:9px;border:1px solid #cbd5d8;border-radius:8px;font:inherit}.hawaii-geo-submit button{background:#0e7490;color:#fff;border:0;border-radius:8px;padding:10px 16px;font:600 14px Arial,sans-serif;cursor:pointer}.hawaii-geo-submit button:disabled{opacity:.6;cursor:wait}.hawaii-geo-dirty-count{font-size:13px;margin-left:12px}
+@media(max-width:700px){.hawaii-portal .hawaii-geography-item{grid-template-columns:1fr;gap:12px}.hawaii-geo-toolbar{width:100%}.hawaii-geo-submit fieldset{grid-template-columns:1fr}.hawaii-geo-options{max-height:300px}}
+
+/* Update-info parity: centered native modal, Fiji field grouping and spacing. */
+body:has(dialog.hawaii-form[open]){overflow:hidden}
+dialog.hawaii-form{position:fixed;inset:0;margin:auto;width:min(720px,calc(100vw - 32px));max-width:none;min-width:0;height:fit-content;max-height:calc(100dvh - 64px);padding:28px 30px 24px;box-sizing:border-box;overflow-y:auto;overflow-x:hidden;border:0;border-radius:14px;background:#fff;color:#292c35;box-shadow:0 20px 60px #062f3559;font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5}
+dialog.hawaii-form::backdrop{background:rgba(6,47,53,.55)}
+.hawaii-form h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:26px;line-height:1.2;color:#062f35;margin:0 0 4px;letter-spacing:0;text-transform:none;outline:none}
+.hawaii-form form{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0}
+.hawaii-form .hawaii-form-subtitle{font-size:14px;line-height:1.6;color:#737985;margin:0}
+.hawaii-form .hawaii-review-notice{background:#fdf6e3;border-left:4px solid #d97706;color:#78350f;font-size:13.5px;line-height:1.45;padding:10px 14px;margin:0;border-radius:6px}
+.hawaii-form fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;min-width:0;width:100%;box-sizing:border-box;border:1px solid #cecac4;border-radius:10px;padding:14px 16px 12px;margin:0}
+.hawaii-form legend{padding:0 8px;font-size:14px;font-weight:600;letter-spacing:.02em;color:#062f35;max-width:100%}
+.hawaii-form .hawaii-geography-paternal{border:2px solid #0767b8}.hawaii-form .hawaii-geography-maternal{border:2px solid #292929}
+.hawaii-form label{display:block;min-width:0;max-width:100%;font-size:13px;line-height:1.5;font-weight:600;color:#062f35;overflow-wrap:anywhere}
+.hawaii-form input,.hawaii-form select,.hawaii-form textarea{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;padding:9px 10px;margin-top:5px;border:1px solid #cecac4;border-radius:6px;background:#fff;color:#292c35;font-family:inherit;font-size:14px;line-height:1.5;font-weight:400}
+.hawaii-form input:focus,.hawaii-form select:focus,.hawaii-form textarea:focus{outline:2px solid #0e7490;outline-offset:1px}.hawaii-form input[type=file]{padding:6px;background:#f8fafc}.hawaii-form textarea{resize:vertical;min-height:88px}
+.hawaii-form small,.hawaii-form .hawaii-field-help{display:block;color:#78808e;font-size:12px;font-weight:400;line-height:1.5;margin:4px 0 0}.hawaii-form .hawaii-required{color:#b23a48}.hawaii-form .wide{grid-column:1/-1}
+.hawaii-form .hawaii-form-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:0}
+.hawaii-form-actions button{width:auto;padding:11px 20px;border:1px solid transparent;border-radius:8px;background:#062f35;color:#fff;font:600 14px 'DM Sans',system-ui,sans-serif;cursor:pointer}.hawaii-form-actions .hawaii-form-cancel{background:#fff;color:#c52c40;border-color:#c52c40}.hawaii-form-actions button:disabled{opacity:.6;cursor:wait}
+.hawaii-form [role=status]{font-size:14px;line-height:1.5;margin:12px 0 0;overflow-wrap:anywhere}.hawaii-form [role=status]:empty{display:none}
+@media(max-width:560px){dialog.hawaii-form{width:calc(100vw - 20px);max-height:calc(100dvh - 24px);padding:20px 16px}.hawaii-form fieldset{grid-template-columns:minmax(0,1fr);padding:12px}.hawaii-form h2{font-size:24px}}
+
+/* Success receipt stays visible after the Update info dialog closes. */
+.hawaii-submission-confirmation{position:fixed;z-index:100001;bottom:20px;left:50%;transform:translateX(-50%);width:min(620px,calc(100% - 32px));box-sizing:border-box;display:flex;gap:16px;align-items:center;padding:16px 20px;border:1px solid #86b89a;border-left:5px solid #166534;border-radius:10px;background:#f0fdf4;color:#14532d;box-shadow:0 6px 24px rgba(0,0,0,.16);font:inherit}
+.hawaii-submission-confirmation p{margin:0;font-size:.9rem;line-height:1.5;overflow-wrap:anywhere}
+.hawaii-submission-confirmation button{flex-shrink:0;padding:8px 12px;border:1px solid #166534;border-radius:6px;background:white;color:#14532d;font:inherit;cursor:pointer}
+.hawaii-submission-confirmation button:focus-visible{outline:3px solid #0e7490;outline-offset:2px}
+@media(max-width:480px){.hawaii-submission-confirmation{align-items:flex-start;flex-direction:column;gap:10px;bottom:12px;padding:14px}}
+
+
+/* Country drafts and validation are scoped to Hawaiʻi's geography form. */
+.hawaii-country-editor{min-width:240px;max-width:100%;padding:12px;border:1px solid #d8d4ca;border-radius:8px;text-align:left}
+.hawaii-country-editor p{font-size:.85rem;margin:5px 0 10px}
+.hawaii-country-editor label{display:block;font-size:.9rem}
+.hawaii-country-editor input{padding:8px;border:1px solid #bdb7ac;border-radius:4px;max-width:100%;box-sizing:border-box}
+.hawaii-country-editor input[type=number]{width:5rem;margin-left:8px}
+.hawaii-country-row{display:flex;flex-wrap:wrap;align-items:end;gap:8px;margin:10px 0}
+.hawaii-country-row label{flex:1;min-width:180px}.hawaii-country-row input{display:block;width:100%}
+.hawaii-country-row [aria-invalid=true]{border:2px solid #b42318;background:#fff8f7}
+.hawaii-country-error{order:3;flex-basis:100%;color:#9b2117;font-size:.85rem}
+.hawaii-country-error:empty{display:none}.hawaii-country-editor button{padding:7px 10px}
+.hawaii-bulk-controls{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px}
+.hawaii-bulk-controls[hidden]{display:none}
+
+/* Requested emphasis color on direct Hawaiʻi scholar profiles only. */
+.hawaii-portal :is(strong,b,a[href]),
+.hawaii-profile-header :is(strong,b,a[href]),
+.hawaii-form :is(strong,b,a[href]){color:#804b03!important}
+
+/* Keep research topics inside the text column, clear of country controls. */
+.hawaii-publication-content .db-item__tags{max-width:100%;min-width:0;gap:6px}
+.hawaii-publication-content .db-item__badge--tag{max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;line-height:1.5}
+
+/* Summary tiles use the dashboard panel look (glossy colours, six across). */
+.hawaii-summary .db-kpis{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:14px!important;}
+.hawaii-summary .db-section__hint{color:#111;font-family:"DM Sans",Arial,sans-serif;font-size:1rem;line-height:1.45;font-weight:400;font-style:normal;opacity:1}
+
+/* Repeatable postgraduate degrees retain the existing fieldset layout. */
+.hawaii-degree-group{display:grid;gap:12px;min-width:0}
+.hawaii-form .hawaii-add-degree{justify-self:start;background:#eef6f6;color:#075565;border:1px solid #8ab3b9;font-weight:600}
+
+/* Shared profile link: pre-launch box and publications heading on a light (30%) Native Hawaiian mat,
+   with black text and dark-teal bold phrases and links, matching the Fiji shared link. */
+.hawaii-portal .hawaii-portal-intro{background:linear-gradient(rgba(251,248,242,.70),rgba(251,248,242,.70)),url("../img/hawaii/mat-background.webp") center top / 1400px auto repeat!important}
+.hawaii-portal .hawaii-portal-intro,.hawaii-portal .hawaii-portal-intro p,.hawaii-portal .hawaii-portal-intro h2,.hawaii-portal .hawaii-portal-intro h3{color:#111!important}
+.hawaii-portal .hawaii-portal-intro :is(strong,b,a[href]){color:#0b4f5c!important}
+.hawaii-portal .hawaii-portal-intro .direct-review-callout,.hawaii-portal .hawaii-portal-intro .direct-review-callout :is(strong,b){color:#4b3a00!important}
+.hawaii-portal .hawaii-portal-intro .direct-review-badge{color:#9a6500!important}
+.hawaii-portal .hawaii-portal-intro strong.scholar-geotag-highlight{color:#111!important}
+/* Shared profile link: grey-ish text set to black (light theme only). */
+html:not([data-theme="dark"]) .hawaii-portal{--color-text:#111;--color-text-muted:#111;--color-text-faint:#111}
+html:not([data-theme="dark"]) .hawaii-portal :is(.db-scholar-card__updated em,.sct-sub,.sct-meta,.db-item__meta em){color:#111!important}
+html:not([data-theme="dark"]) .hawaii-portal :is(.hawaii-summary-heading,.hawaii-geography-list :is(legend,label,p:not([class]),label span,button:not([type="submit"])),.hawaii-geo-submit :is(h3,p,legend,label,.hawaii-geo-dirty-count)){color:#111!important}
+/* Summary panels match the dashboard panel width so the tiles are the same size. */
+.hawaii-summary{margin-left:calc(50% - 536px)!important;margin-right:calc(50% - 536px)!important;padding:16px 20px!important;}

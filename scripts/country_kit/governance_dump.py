@@ -27,17 +27,20 @@ ALIASES = {
     "Title / Salutation": ["Salutation"],
     "Alive / Deceased": ["Living Status"],
     "ORCID / Researcher ID": ["ORCID"],
-    "Paternal Island Division": ["Statistical Region (Paternal)", "Paternal Island Group", "Community Affiliation 1 — State"],
-    "District Paternal": ["Political/Census District (Paternal)", "Paternal Island", "Community Affiliation 1 — Municipality"],
-    "Specific Island Paternal": ["Specific Island (Paternal)", "Paternal Island", "Community Affiliation 1 — Island / Atoll"],
+    "Paternal Island Division": ["Statistical Region (Paternal)", "Paternal Island Group", "Community Affiliation 1 — State", "Island Paternal"],
+    "District Paternal": ["Political/Census District (Paternal)", "Paternal Island", "Community Affiliation 1 — Municipality", "Moku Paternal"],
+    "Specific Island Paternal": ["Specific Island (Paternal)", "Paternal Island", "Community Affiliation 1 — Island / Atoll", "Island Paternal"],
     "Clan Paternal": ["Family / ʻĀiga (Paternal)", "Paternal Island Council / Puna"],
-    "Village/Town Paternal (Kolo)": ["Village (Paternal)", "Paternal Village / Tapere", "Community Affiliation 1 — Village"],
-    "Maternal Island Division": ["Statistical Region (Maternal)", "Maternal Island Group", "Community Affiliation 2 — State"],
-    "District Maternal": ["Political/Census District (Maternal)", "Maternal Island", "Community Affiliation 2 — Municipality"],
-    "Specific Island Maternal": ["Specific Island (Maternal)", "Maternal Island", "Community Affiliation 2 — Island / Atoll"],
+    "Village/Town Paternal (Kolo)": ["Village (Paternal)", "Paternal Village / Tapere", "Community Affiliation 1 — Village", "Ahupuaʻa Paternal"],
+    "Maternal Island Division": ["Statistical Region (Maternal)", "Maternal Island Group", "Community Affiliation 2 — State", "Island Maternal"],
+    "District Maternal": ["Political/Census District (Maternal)", "Maternal Island", "Community Affiliation 2 — Municipality", "Moku Maternal"],
+    "Specific Island Maternal": ["Specific Island (Maternal)", "Maternal Island", "Community Affiliation 2 — Island / Atoll", "Island Maternal"],
     "Clan Maternal": ["Family / ʻĀiga (Maternal)", "Maternal Island Council / Puna"],
-    "Village/Town Maternal (Kolo)": ["Village (Maternal)", "Maternal Village / Tapere", "Community Affiliation 2 — Village"],
-    "Tonga Degree Episodes": ["Home-Country Degree Episodes"],
+    "Village/Town Maternal (Kolo)": ["Village (Maternal)", "Maternal Village / Tapere", "Community Affiliation 2 — Village", "Ahupuaʻa Maternal"],
+    "Tonga Degree Episodes": ["Home-Country Degree Episodes", "Hawaiʻi Degree Episodes"],
+    "International Degree Episodes": ["Outside Hawaiʻi Degree Episodes"],
+    "Lineage / Provenance Notes": ["Provenance / Evidence Notes"],
+    "Linked Tongan Scholar Count": ["Linked Native Hawaiian Scholar Count"],
     "Identity Source ID": ["Identity Source ID", "Identity Source URL"],
     # Graduate Degrees
     "Degree Stage": ["Stage", "Degree Level"],
@@ -46,7 +49,7 @@ ALIASES = {
     "C_Uni name": ["Current Institution Name", "Canonical University Name (C_Uni)"],
     "O_Uni name": ["Original Institution Name", "Original University Name (O_Uni)"],
     "Country": ["University Country", "Country", "Institution Country"],
-    "International from Tonga?": ["International?"],
+    "International from Tonga?": ["International?", "Outside Hawaiʻi?"],
     # Samoa keeps degree years in "End Year" (filled for every dated degree);
     # its later "Completion Year" column is only a fallback.
     "Finish / Completion Year": ["End Year", "Completion Year"],
@@ -60,8 +63,8 @@ ALIASES = {
     "Journal / Book Title": ["Journal / Publisher", "Container / Journal"],
     "Publisher / Institution / School": ["Publisher / Institution"],
     "URL": ["Primary URL"],
-    "Tagged Tonga?": ["About Country?"],
-    "Tagged Tongan?": ["Verified Indigenous Scholar Linked?"],
+    "Tagged Tonga?": ["About Country?", "Tagged Hawaiʻi?"],
+    "Tagged Tongan?": ["Verified Indigenous Scholar Linked?", "Tagged Native Hawaiian?"],
     "Bibliographic Lead Author": ["Lead Author Name"],
     "Deduplication Key": ["Dedup Key"],
     "Discovery / Source URL": ["Discovery URL"],
@@ -73,10 +76,10 @@ ALIASES = {
     "Standardized Leadership Category": ["Leadership Category"],
     "Evidence / Notes": ["Evidence"],
     # Research Geography
-    "District": ["Political/Census District", "Island", "Municipality"],
-    "Specific Island": ["Island", "Island / Atoll"],
-    "Village / Town / Site": ["Village / Tapere", "Village / Site"],
-    "Island Division (auto from District)": ["Statistical Region", "Island Group", "State"],
+    "District": ["Political/Census District", "Island", "Municipality", "Moku"],
+    "Specific Island": ["Island", "Island / Atoll", "Hawaiʻi Island"],
+    "Village / Town / Site": ["Village / Tapere", "Village / Site", "Ahupuaʻa", "Locality / Site"],
+    "Island Division (auto from District)": ["Statistical Region", "Island Group", "State", "Hawaiʻi Island"],
     # Institutions
     "Institution": ["Canonical Name", "Canonical Institution (C_Uni)", "Institution"],
     # Samoa-native layout
@@ -191,6 +194,56 @@ def canon_place(v, cfg):
     return "", ""
 
 
+
+def _yes(v) -> bool:
+    return str(v or "").strip().lower() in ("yes", "true", "y")
+
+
+def _hawaii_public_gate(cfg, gov, report, cache=None):
+    """Hawaiʻi only: apply the Master's own Public Export Config and record approvals.
+
+    1. Rows with a Public Display Approved column are kept only when it is Yes/TRUE.
+    2. Scholars are kept only when Identity Verification Status starts with "Verified".
+    3. Rows tied to a scholar who is not kept are dropped.
+    4. Every cell whose (tab, field) is not marked Publicly Exportable = Yes is blanked.
+       Gating columns are read before blanking. Nothing is written to the Master.
+    """
+    pec = (cache or {}).get("Public Export Config")
+    if pec is None:
+        pec = fetch(cfg["masterId"], "Public Export Config")
+    allow = set()
+    for r in (pec or [])[4:]:
+        if len(r) > 2 and _yes(r[2]):
+            allow.add((str(r[0]).strip(), str(r[1]).strip()))
+    kept = set()
+    sc = gov.get("Scholars") or []
+    if len(sc) > 4:
+        h = sc[3]
+        for r in sc[4:]:
+            d = dict(zip(h, r))
+            if _yes(d.get("Public Display Approved")) and str(d.get("Identity Verification Status", "")).strip().lower().startswith("verified"):
+                kept.add(str(d.get("Scholar ID", "")).strip().upper())
+    counts = {}
+    for sheet, rows in list(gov.items()):
+        if len(rows) < 4:
+            continue
+        h = rows[3]
+        body = []
+        for r in rows[4:]:
+            d = dict(zip(h, r))
+            if "Public Display Approved" in h and not _yes(d.get("Public Display Approved")):
+                continue
+            if sheet == "Scholars" and str(d.get("Scholar ID", "")).strip().upper() not in kept:
+                continue
+            sid = str(d.get("Scholar ID") or d.get("Scholar ID (optional)") or "").strip().upper()
+            if sheet != "Scholars" and sid and sid not in kept:
+                continue
+            body.append([(v if (sheet, h[i] if i < len(h) else "") in allow else "") for i, v in enumerate(r)])
+        counts[sheet] = {"before": len(rows) - 4, "after": len(body),
+                         "exportableFields": sum(1 for x in h if (sheet, x) in allow)}
+        gov[sheet] = rows[:4] + body
+    report["_hawaiiPublicGate"] = counts
+
 def build(key: str, dump: Path, cache=None):
     cfg = load_country(key)
     th = json.loads((KIT / "tonga_headers.json").read_text())
@@ -204,6 +257,8 @@ def build(key: str, dump: Path, cache=None):
         if rows is None:
             rows = fetch(cfg["masterId"], sheet)
         gov[sheet] = rows or []
+    if key == "hawaii":
+        _hawaii_public_gate(cfg, gov, report, cache)
     # Research geography per publication (for one-hot district columns)
     geo_by_pub = {}
     g = gov["Research Geography"]
@@ -211,12 +266,14 @@ def build(key: str, dump: Path, cache=None):
         gh = g[3]
         for r in g[4:]:
             d = dict(zip(gh, r))
-            pid = (d.get("Publication ID") or "").strip()
+            pid = (d.get("Publication ID") or d.get("Publication ID / BibTeX Key") or "").strip()
             if not pid or str(d.get("Public Display Approved", "")).upper() == "FALSE":
                 continue
+            if key == "hawaii" and d.get("Moku") and d.get("Hawaiʻi Island"):
+                d = dict(d, Island=f"{d['Moku']} ({d['Hawaiʻi Island']})" if f"{d['Moku']} ({d['Hawaiʻi Island']})" in cfg["districtList"] else d["Moku"])
             div, dist = canon_place(d.get("Island") or d.get("Municipality") or d.get("Island / Atoll")
                                     or d.get("Political/Census District"), cfg)
-            div2, _ = canon_place(d.get("Island Group") or d.get("State") or d.get("Statistical Region"), cfg)
+            div2, _ = canon_place(d.get("Island Group") or d.get("State") or d.get("Statistical Region") or d.get("Hawaiʻi Island"), cfg)
             geo_by_pub.setdefault(pid, set()).update(x for x in (div or div2, dist) if x)
 
     # Institution ID -> canonical name (Samoa-style ID-keyed Masters)
@@ -253,7 +310,7 @@ def build(key: str, dump: Path, cache=None):
             for r in src[4:]:
                 if not r or not str(r[0]).strip():
                     continue
-                d = {h: (r[i] if i < len(r) else "") for h, i in idx.items()}
+                d = {h: (r[i] if i < len(r) else "") for h, i in idx.items() if h}
                 if str(d.get("Inclusion Status", "")).strip().lower() == "excluded":
                     continue
                 n_in += 1
@@ -284,7 +341,16 @@ def build(key: str, dump: Path, cache=None):
                     dv, _ = canon_place(rec.get("Island Division (auto from District)"), cfg)
                     rec["Island Division (auto from District)"] = dv or div
                 if tsheet == "Publications":
-                    tags = geo_by_pub.get(rec.get("Publication ID / BibTeX Key", ""), set())
+                    tags = set(geo_by_pub.get(rec.get("Publication ID / BibTeX Key", ""), set()))
+                    if key == "hawaii":
+                        # Hawaiʻi Master keeps one Yes/No column per island.
+                        tags |= {lab for lab in cfg["divisionList"]
+                                 if str(d.get(lab, "")).strip().lower() in ("yes", "true")}
+                        canon = {"journal article": "Journal Article", "book chapter": "Book Chapter",
+                                 "edited monograph": "Book", "edited book": "Book", "book": "Book"}
+                        pt = " ".join(str(rec.get("Publication Type", "")).lower().split())
+                        if pt in canon:
+                            rec["Publication Type"] = canon[pt]
                     for lab in cfg["divisionList"] + cfg["districtList"]:
                         rec[lab] = "Yes" if lab in tags else ""
                 if tsheet in ("Graduate Degrees", "Non-Completed Degrees"):
@@ -369,7 +435,7 @@ def _g(r, *names):
 
 def _cy(d):
     """Degree completion year: End Year (Samoa layout), else Completion Year."""
-    m = re.search(r"\d{4}", str(_g(d, "End Year", "Completion Year")))
+    m = re.search(r"\d{4}", str(_g(d, "End Year", "Completion Year", "Finish / Completion Year", "Year / Status")))
     return m.group(0) if m else ""
 
 
@@ -383,20 +449,20 @@ def write_lookups_and_mobility(cfg, gov, dump, report):
             lat, lon = float(r.get("Latitude")), float(r.get("Longitude"))
         except (TypeError, ValueError):
             lat = lon = None
-        rec = {"name": _g(r, "Canonical Institution (C_Uni)", "Canonical Name", "Original Name / Alias"),
+        rec = {"name": _g(r, "Canonical Institution (C_Uni)", "Canonical Name", "Institution", "Original Name / Alias"),
                "country": r.get("Country", ""), "city": _g(r, "City / Locality", "City"),
                "region": r.get("Region", ""), "lat": lat, "lon": lon}
         by_id[r.get("Institution ID")] = rec
         alias = _g(r, "Aliases (semicolon-separated, includes historical names)")
-        for n in [_g(r, "Canonical Institution (C_Uni)", "Canonical Name"), r.get("Original Name / Alias")] + alias.split(";"):
+        for n in [_g(r, "Canonical Institution (C_Uni)", "Canonical Name", "Institution"), r.get("Original Name / Alias")] + alias.split(";"):
             if n and n.strip():
                 by_name[n.strip().lower()] = rec
     pool = coord_pool()
     def nk(x):
         return re.sub(r"[^a-z0-9]+", " ", norm(x or "").lower()).strip()
     for d in _dicts(gov["Graduate Degrees"]):
-        nm = _g(d, "Canonical University Name (C_Uni)", "Current Institution Name",
-                "Original University Name (O_Uni)", "Original Institution Name")
+        nm = _g(d, "Canonical University Name (C_Uni)", "Current Institution Name", "C_Uni name",
+                "Original University Name (O_Uni)", "Original Institution Name", "O_Uni name")
         if nm and nm.strip().lower() not in by_name and d.get("Institution ID") not in by_id:
             by_name[nm.strip().lower()] = {"name": nm, "country": _g(d, "University Country", "Country"),
                                            "city": d.get("City", ""), "region": d.get("Region", ""), "lat": None, "lon": None}
@@ -423,8 +489,8 @@ def write_lookups_and_mobility(cfg, gov, dump, report):
         by_s.setdefault(d.get("Scholar ID"), []).append(d)
     n = 0
     for sid, ds in by_s.items():
-        phds = [d for d in ds if re.match(r"(?i)phd|doctor", _g(d, "Degree Level", "Stage"))]
-        mas = [d for d in ds if re.match(r"(?i)master", _g(d, "Degree Level", "Stage"))]
+        phds = [d for d in ds if re.match(r"(?i)phd|doctor", _g(d, "Degree Level", "Stage", "Degree Stage"))]
+        mas = [d for d in ds if re.match(r"(?i)master", _g(d, "Degree Level", "Stage", "Degree Stage"))]
         if not phds or not mas:
             continue
         p = sorted(phds, key=lambda d: _cy(d) or "9999")[0]
@@ -433,9 +499,9 @@ def write_lookups_and_mobility(cfg, gov, dump, report):
         m = sorted(mm, key=lambda d: _cy(d) or "0")[-1]
 
         def side(d):
-            rec = by_id.get(d.get("Institution ID")) or by_name.get(_g(d, "Canonical University Name (C_Uni)", "Current Institution Name").strip().lower()) or {}
-            return {"uni": _g(d, "Canonical University Name (C_Uni)", "Current Institution Name",
-                              "Original University Name (O_Uni)", "Original Institution Name"),
+            rec = by_id.get(d.get("Institution ID")) or by_name.get(_g(d, "Canonical University Name (C_Uni)", "Current Institution Name", "C_Uni name").strip().lower()) or {}
+            return {"uni": _g(d, "Canonical University Name (C_Uni)", "Current Institution Name", "C_Uni name",
+                              "Original University Name (O_Uni)", "Original Institution Name", "O_Uni name"),
                     "in": _g(d, "Field / Discipline", "Field"), "city": d.get("City") or rec.get("city", ""),
                     "country": _g(d, "University Country", "Country") or rec.get("country", ""),
                     "region": d.get("Region") or rec.get("region", ""),

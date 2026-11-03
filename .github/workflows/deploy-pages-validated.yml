@@ -15,6 +15,7 @@ on:
       - Refresh Tongan Master File snapshot
       - Refresh Samoan Master File snapshot
       - Refresh Vanuatu Master File snapshot
+      - Refresh Native Hawaiian Master File snapshot
     types: [completed]
     branches: [main]
 

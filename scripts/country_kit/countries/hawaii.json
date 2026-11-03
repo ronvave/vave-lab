@@ -1,0 +1,131 @@
+{
+  "key": "hawaii",
+  "KEY": "HAWAII",
+  "prefix": "HAW",
+  "iso3": "haw",
+  "iso2": "hi",
+  "masterId": "1fgiLq8YG1tfSEcfOZ_XOiUFZkLZ9CH4tQObkROF0_Fw",
+  "masterTitle": "Hawaii_Scholar_Master_file",
+  "country": "Hawaiʻi",
+  "countryValue": "Hawaiʻi",
+  "countryInSentence": "Hawaiʻi",
+  "countryPossessive": "Hawaiʻi's",
+  "adjective": "Native Hawaiian",
+  "adjectiveUpper": "NATIVE HAWAIIAN",
+  "dashboardTitle": "Native Hawaiian Scholar Dashboard",
+  "partTab": "Part-Native Hawaiian",
+  "levels": {
+    "division": {
+      "singular": "Island",
+      "plural": "Islands"
+    },
+    "district": {
+      "singular": "Moku",
+      "plural": "Moku"
+    },
+    "clan": {
+      "singular": "Cultural Affiliation",
+      "plural": "Cultural Affiliations"
+    },
+    "village": {
+      "singular": "Ahupuaʻa",
+      "plural": "Ahupuaʻa"
+    }
+  },
+  "lineage": {
+    "paternal": "Paternal",
+    "maternal": "Maternal"
+  },
+  "villageExample": "Waikīkī",
+  "divisions": {
+    "Hawaiʻi": [
+      "Hilo",
+      "Puna (Hawaiʻi)",
+      "Hāmākua",
+      "Kohala",
+      "Kona (Hawaiʻi)",
+      "Kaʻū"
+    ],
+    "Maui": [
+      "Honuaʻula",
+      "Kāʻanapali",
+      "Pūʻali Komohana",
+      "Hāmākualoa",
+      "Hāmākuapoko",
+      "Lāhainā (Maui)",
+      "Koʻolau (Maui)",
+      "Kula",
+      "Hāna",
+      "Kīpahulu",
+      "Kahikinui",
+      "Kaupō"
+    ],
+    "Oʻahu": [
+      "Koʻolauloa",
+      "Waialua",
+      "Waiʻanae",
+      "Koʻolaupoko",
+      "ʻEwa",
+      "Kona (Oʻahu)"
+    ],
+    "Kauaʻi": [
+      "Koʻolau (Kauaʻi)",
+      "Haleleʻa",
+      "Nāpali",
+      "Kona (Kauaʻi)",
+      "Puna (Kauaʻi)"
+    ],
+    "Molokaʻi": [
+      "Kona (Molokaʻi)",
+      "Koʻolau (Molokaʻi)"
+    ],
+    "Lānaʻi": [
+      "Lāhainā (Lānaʻi)"
+    ],
+    "Niʻihau": [
+      "Kona (Niʻihau)"
+    ],
+    "Kahoʻolawe": [
+      "Kahoʻolawe"
+    ]
+  },
+  "divisionNote": "Islands (mokupuni) and moku follow the Hawaiʻi Statewide GIS Program Moku layer (SHPD, updated August 2026). Moku names shared by several islands carry the island in brackets. Kahoʻolawe has no moku polygon in that layer.",
+  "map": {
+    "bounds": [
+      [
+        18.85,
+        -160.35
+      ],
+      [
+        22.3,
+        -154.75
+      ]
+    ],
+    "center": [
+      20.6,
+      -157.4
+    ],
+    "zoom": 7
+  },
+  "geojson": {
+    "source": "hawaii-statewide-gis",
+    "file": "/tmp/kit/haw/moku_named.geojson",
+    "nameProp": "name",
+    "aliases": {},
+    "attribution": "Moku (Historic Land Divisions), Hawaiʻi Statewide GIS Program and State Historic Preservation Division, updated August 2026. Unrestricted public use."
+  },
+  "art": {
+    "header": "img/hawaii/panel-header-kalo.webp",
+    "headerCredit": "Kalo loʻi valley image supplied by Ron Vave",
+    "flag": "img/hawaii/flag-fingerprint-src.png"
+  },
+  "people": "Native Hawaiian",
+  "genderLabels": {
+    "male": "Kāne",
+    "female": "Wahine"
+  },
+  "citation": "Vave, R. (2026). Native Hawaiian Scholar Dashboard. Vave Lab, University of Hawaiʻi at Mānoa.",
+  "intro": "The Native Hawaiian Scholars Database & Dashboard is a sister project to the Tongan, Samoan and Fijian Scholars Databases & Dashboards, curated by <a href=\"index.html\">Assistant Professor Ron Vave</a> at the University of Hawaiʻi at Mānoa. It highlights the scholarly research and contributions of Native Hawaiian postgraduates and researchers, in Hawaiʻi and around the world.",
+  "timezone": "Pacific/Honolulu",
+  "masterLayout": "governance"
+}

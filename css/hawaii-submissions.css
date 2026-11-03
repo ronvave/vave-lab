@@ -1,0 +1,62 @@
+[data-hawaii-queue]{min-width:0;color:#062f35}
+[data-hawaii-queue] h2{font-size:1.35rem}
+.hawaii-queue-helper{font-size:.85rem;color:#6b7280;margin:8px 0 16px}
+.hawaii-queue-toolbar,.hawaii-bulk-controls,.hawaii-review-actions,.hawaii-selection-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.hawaii-queue-count{margin-left:auto;font-size:.82rem;color:#6b7280}
+[data-hawaii-queue] button,[data-hawaii-queue] select{font:inherit;font-size:.85rem;padding:8px 12px;border:1px solid #e2e0d4;border-radius:6px;background:white;color:#062f35;cursor:pointer}
+[data-hawaii-queue] button:disabled,[data-hawaii-queue] input:disabled{opacity:.55;cursor:not-allowed}
+[data-hawaii-queue] :focus-visible{outline:3px solid #0e7490;outline-offset:2px}
+[data-hawaii-queue] .hawaii-approve{background:#166534;color:white;border-color:#166534}
+[data-hawaii-queue] .hawaii-reject{background:#991b1b;color:white;border-color:#991b1b}
+.hawaii-ban{margin-right:auto}
+.hawaii-review{background:white;border:1px solid #e2e0d4;border-left:4px solid #d97706;border-radius:8px;padding:16px;margin:14px 0;min-width:0;overflow-wrap:anywhere}
+.hawaii-review--reviewed,.hawaii-review--approved{border-left-color:#16a34a}.hawaii-review--rejected{border-left-color:#b91c1c}
+.hawaii-review-heading{display:flex;gap:12px;align-items:flex-start}.hawaii-review-heading>div{min-width:0;flex:1}.hawaii-review-heading h3{font-family:inherit;font-weight:700;font-size:1rem;margin:0 0 4px}
+.hawaii-status-pill{font-size:.75rem;border:1px solid #e2e0d4;border-radius:999px;padding:2px 8px;background:#f8fafc}
+.hawaii-submitter,.hawaii-review .meta{font-size:.82rem;color:#6b7280}.hawaii-submitter{margin:10px 0}
+.hawaii-selection-controls{margin:10px 0}.hawaii-review summary{font-weight:700;cursor:pointer;margin:10px 0}
+.hawaii-review table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.86rem}.hawaii-review th,.hawaii-review td{padding:9px;text-align:left;vertical-align:top;border-bottom:1px solid #e2e0d4;overflow-wrap:anywhere;white-space:pre-wrap}.hawaii-review th:first-child{width:42px;box-sizing:border-box}.hawaii-review td:nth-child(2){font-weight:700}.hawaii-review td:nth-child(3){color:#6b7280}.hawaii-review td:nth-child(4){font-weight:700;color:#b91c1c}
+.hawaii-positive{color:#166534;font-size:.85rem}.hawaii-queue-status{white-space:pre-wrap;font-size:.85rem;margin:12px 0}.hawaii-queue-status:empty{display:none}.hawaii-error{color:#991b1b;background:#fff1f2;padding:10px;border-radius:6px;font-size:.85rem}
+.hawaii-note-label{display:block;font-size:.85rem;margin:14px 0 8px}.hawaii-review textarea,.hawaii-attachment input[type=text]{display:block;width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #dbe4e8;border-radius:6px;font:inherit}.hawaii-review textarea{min-height:60px;margin-top:5px}
+.hawaii-submission-badge{display:inline-block;background:#b23a48;color:#fff;border-radius:999px;padding:1px 7px;margin-left:5px;font-size:.7rem;font-weight:700}.hawaii-submission-badge[hidden],.hawaii-bulk-controls[hidden]{display:none}
+.hawaii-attachments{margin-top:14px;padding:12px;background:#f8fafc;border-radius:8px}.hawaii-attachment{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;margin:9px 0;padding:10px;border:1px solid #dbe4e8;border-radius:8px;background:#fff;overflow-wrap:anywhere}.hawaii-attachment>input{margin-top:5px}.hawaii-attachment label{display:block;font-size:.82rem;margin:8px 0}.hawaii-attachment select{max-width:100%;display:block}.hawaii-attachment-preview{margin:8px 0;color:#6b7280}.hawaii-attachment-preview img{display:block;max-width:min(280px,100%);max-height:280px;border-radius:8px;border:1px solid #ccd6da;object-fit:contain;background:#fff}
+.hawaii-geography-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;font-size:.84rem;margin:12px 0}.hawaii-location-chip{display:inline-block;border:1px solid #d8d8ce;border-radius:999px;padding:2px 7px;margin:2px;font-size:.75rem;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere}
+@media(max-width:600px){.hawaii-geography-grid{grid-template-columns:1fr}.hawaii-review-heading{flex-wrap:wrap}.hawaii-review{padding:12px}.hawaii-review table{font-size:.8rem}.hawaii-review th,.hawaii-review td{padding:8px 4px}.hawaii-review th:first-child{width:32px}.hawaii-queue-toolbar{align-items:flex-start}.hawaii-review-actions button{flex:1}.hawaii-ban{margin-right:0}}
+/* The existing Hawaiʻi shell must not force the queue outside a narrow viewport. */
+.tabs{flex-wrap:wrap}
+@media(max-width:600px){main.wrap{padding:16px 12px}header.topbar{padding:14px 12px;flex-wrap:wrap;gap:10px}header.topbar .actions{flex-wrap:wrap}.card[data-hawaii-queue]{padding:12px}}
+
+/* Private attachment proposal review */
+.hawaii-attachment-analysis{margin-top:20px;padding:18px;border:1px solid #c7d8d9;border-radius:8px;background:#f7fbfa}
+.hawaii-attachment-analysis h4{font-size:1.1rem;margin:0 0 8px}
+.hawaii-analysis-summary{font-weight:600;color:#06464c}
+.hawaii-analysis-item{background:#fff;border:1px solid #d7dfdf;border-radius:6px;padding:16px;margin:14px 0}
+.hawaii-analysis-item input[type=checkbox]{margin-right:10px}
+.hawaii-attachment-analysis pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font:inherit;font-size:.9em;background:#f1f4f3;padding:12px}
+.hawaii-attachment-analysis details{margin:8px 0}
+.hawaii-attachment-analysis summary{cursor:pointer;font-weight:600}
+.hawaii-proposal-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
+.hawaii-proposal-form label{display:flex;flex-direction:column;gap:5px}
+.hawaii-proposal-form input,.hawaii-proposal-form select{padding:8px;width:100%;border:1px solid #b9c7c8;border-radius:4px}
+.hawaii-attachment-analysis td{overflow-wrap:anywhere;vertical-align:top}
+/* Attachment comparisons have three content columns, without a checkbox column. */
+.hawaii-review .hawaii-attachment-analysis th:first-child{width:20%}
+.hawaii-review .hawaii-attachment-analysis th:nth-child(2),.hawaii-review .hawaii-attachment-analysis th:nth-child(3){width:40%}
+.hawaii-review .hawaii-attachment-analysis td:nth-child(2){font-weight:400;color:#475569}
+.hawaii-review .hawaii-attachment-analysis td:nth-child(3){font-weight:600;color:#06464c}
+
+.hawaii-review .hawaii-recorded-fields th:first-child{width:18%}
+.hawaii-analysis-group{border-left:4px solid #0e7490;padding:4px 0 4px 14px;margin:18px 0}.hawaii-analysis-group>h5{margin:0 0 6px;font-size:.95rem;color:#06464c;text-transform:none}
+.hawaii-analysis-item details table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:6px}.hawaii-analysis-item details td{border-top:1px solid #e3e8e8;padding:4px 6px;vertical-align:top}
+.hawaii-analysis-item pre{white-space:pre-wrap;font-size:.8rem;background:#f6f8f8;padding:8px;border-radius:4px;max-height:220px;overflow:auto}
+.hawaii-proposal-form textarea{padding:8px;width:100%;border:1px solid #b9c7c8;border-radius:4px;font:inherit}
+.hawaii-geo-select{border:1px solid #d7dfdf;border-radius:6px;padding:10px 14px;margin:10px 0;display:flex;flex-wrap:wrap;gap:8px 18px}.hawaii-geo-select legend{font-weight:600;color:#06464c;padding:0 4px}.hawaii-geo-select label{display:flex;align-items:center;gap:6px;font-size:.88rem}.hawaii-geo-select .meta{flex-basis:100%;margin:2px 0 0}
+
+/* Why a scholar submission is still Pending */
+.hawaii-remaining{margin:14px 0;padding:12px 14px;border:1px solid #d9a441;border-left:5px solid #b7791f;border-radius:6px;background:#fff8ea}
+.hawaii-remaining>summary{font-weight:700;cursor:pointer;color:#7a4b00}
+.hawaii-remaining-item{display:block;margin:6px 0;line-height:1.4}
+.hawaii-remaining input[type=text]{display:block;width:100%;max-width:640px;margin:4px 0 10px;padding:6px 8px;font:inherit}
+.hawaii-finish{margin:10px 0 12px;padding:10px 12px;background:#eef7f1;border:1px solid #9fcdb0;border-radius:6px}
+.hawaii-finish p{margin:0 0 8px}
+.hawaii-finish-button{font-weight:700}

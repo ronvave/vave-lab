@@ -43,8 +43,8 @@
   }
   function columnKind(label) {
     var t = String(label || '').toLowerCase();
-    if (t === 'male') return 'male';
-    if (t === 'female') return 'female';
+    if (t === 'male' || t === 'kāne') return 'male';
+    if (t === 'female' || t === 'wahine') return 'female';
     if (/master/.test(t)) return 'masters';
     if (/phd|doctor/.test(t)) return 'phd';
     if (/total/.test(t)) return 'total';
