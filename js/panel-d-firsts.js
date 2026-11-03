@@ -81,12 +81,13 @@
   var UI = { view: 'time', stage: 'both', gender: 'both', key: 'year', dir: 1, excl: {} };
 
   // Tonga stores gender in Tongan (Tangata = male, Fefine = female) and
-  // Samoa in Samoan (Tāne = male, Fafine = female); macrons are ignored.
+  // Samoa in Samoan (Tāne = male, Fafine = female) and Hawaiʻi in
+  // Hawaiian (Kāne = male, Wahine = female); macrons are ignored.
   function gnorm(v) {
     var g = str(v).toLowerCase();
     if (g.normalize) g = g.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (g === 'male' || g === 'm' || g === 'tangata' || g === 'tane') return 'male';
-    if (g === 'female' || g === 'f' || g === 'fefine' || g === 'fafine') return 'female';
+    if (g === 'male' || g === 'm' || g === 'tangata' || g === 'tane' || g === 'kane') return 'male';
+    if (g === 'female' || g === 'f' || g === 'fefine' || g === 'fafine' || g === 'wahine') return 'female';
     return g;
   }
   window.__panelDFirstsShow = function (m) {
@@ -251,7 +252,7 @@
       var img = '<img class="pdf-ph" src="' + esc(r.photo || place(r.gender)) + '" alt="" width="30" height="30" loading="lazy" data-fallback="' + esc(place(r.gender)) + '">';
       var name = r.sid ? '<a href="' + esc(href) + '" data-pdf-sid="' + esc(r.sid) + '" data-pdf-name="' + esc(r.bare) + '" data-pdf-q="' + esc(r.q || r.bare) + '" title="Open this scholar\u2019s profile">' + esc(r.person) + '</a>' : esc(r.person);
       var extra = COLS.map(function (c) { return '<td class="pdf-geo">' + (r[c[0]] ? esc(r[c[0]]) : '<span class="pdf-na">Not recorded</span>') + '</td>'; }).join('');
-      return '<tr class="pdf--' + (r.gender || 'male') + ' pdf--' + r.stage + '"><td class="y">' + (r.year || '<span class="pdf-na">Not recorded</span>') + '</td><td><span class="pdf-sch">' + img + name + '</span></td><td><span class="pdf-tag">' + ICON.cap + esc(r.first) + '</span></td><td class="pdf-fld">' + (r.field ? esc(r.field) : '<span class="pdf-na">Not recorded</span>') + '</td><td><span class="pdf-u">' + (r.uc ? ucFlag(r.uc) : '<span class="pdf-ufx"></span>') + '<span class="pdf-un">' + esc(r.uni) + '</span>' + (r.uc ? ucPill(r.uc) : '') + '</span></td>' + extra + '</tr>';
+      return '<tr class="pdf--' + (r.gender === 'male' || r.gender === 'female' ? r.gender : 'nogender') + ' pdf--' + r.stage + '"><td class="y">' + (r.year || '<span class="pdf-na">Not recorded</span>') + '</td><td><span class="pdf-sch">' + img + name + '</span></td><td><span class="pdf-tag">' + ICON.cap + esc(r.first) + '</span></td><td class="pdf-fld">' + (r.field ? esc(r.field) : '<span class="pdf-na">Not recorded</span>') + '</td><td><span class="pdf-u">' + (r.uc ? ucFlag(r.uc) : '<span class="pdf-ufx"></span>') + '<span class="pdf-un">' + esc(r.uni) + '</span>' + (r.uc ? ucPill(r.uc) : '') + '</span></td>' + extra + '</tr>';
     }).join('') : '<tr><td colspan="' + cols.length + '">No Master\u2019s or PhD recipients match this selection.</td></tr>';
     t.innerHTML = '<thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody>';
     t.querySelectorAll('img[data-fallback]').forEach(function (img) { img.addEventListener('error', function () { var f = img.getAttribute('data-fallback'); if (f && img.getAttribute('src') !== f) img.setAttribute('src', f); }, { once: true }); });
