@@ -539,7 +539,9 @@
         creators = [bibLead].concat(itaukeiScholarNames.concat(hawaiiResearcherNames).filter(function (n) {
           // Avoid duplicating the bib lead when the lead itself is an iTaukei
           // scholar (compare surnames case-insensitively).
-          var leadSurn = bibLead.split(',', 1)[0].trim().toLowerCase();
+          // Hawaiʻi records the lead as 'First Last' as well as 'Last, First'.
+          var leadSurn = bibLead.includes(',') ? bibLead.split(',', 1)[0].trim().toLowerCase()
+                                              : (bibLead.trim().split(/\s+/).pop() || '').toLowerCase();
           var nSurn = n.includes(',') ? n.split(',', 1)[0].trim().toLowerCase()
                                        : (n.trim().split(/\s+/).pop() || '').toLowerCase();
           return leadSurn !== nSurn;
