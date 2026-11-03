@@ -63,10 +63,10 @@
   // prompt. See the module comment for the trade-off note. Kept as
   // base64 so a casual grep of the passcode doesn't hit; anyone with
   // devtools can still recover it. This is by design.
-  var BAKED_PASSCODE = atob('ek5NYldYM1kzVkt3UDY1dFVqRmw=');
+  var BAKED_PASSCODE = atob('QXJhY2huaWRhZTEh');
 
   // Human-facing collaborator password, separate from the data-encryption key.
-  var COLLABORATOR_PASSCODE = atob('OG5RY01Bd1NiZlRNMlNmOXlJd1o=');
+  var COLLABORATOR_PASSCODE = atob('TDl1bGltYTJOb3YyMDI2');
 
   // HMAC signing key for demo tokens. Base64 of a fixed random 32-byte
   // string, embedded here for the same trade-off reason. If someone

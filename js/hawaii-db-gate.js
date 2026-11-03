@@ -65,7 +65,7 @@
   //                                          200,000 iters, 32 bytes)
   var VERIFIER_SALT = new TextEncoder().encode('vavelab-db-verifier-v1');
   var VERIFIER_HASH_HEX =
-    'dd74625206ad66b963e656d66862287474c8fd1eb27db35e763d1cbc730221da';
+    '338d7b662c8918e135d6161eede5346ce5ee1a96ecc7ddb98bdc149e20cbd0c0';
 
   // Every file the Native Hawaiian database fetches. Maps the plaintext .json URL
   // that hawaii-database-adapter.js / admin-hawaii-master.js request onto
