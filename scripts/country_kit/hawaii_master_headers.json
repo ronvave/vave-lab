@@ -1,0 +1,1259 @@
+{
+"README": [
+[
+"Hawaiian Scholar Database — Master File"
+],
+[],
+[],
+[
+"Section",
+"Guidance"
+]
+],
+"News Submissions": [
+[
+"News Submissions"
+],
+[],
+[],
+[
+"Submission ID",
+"Submitted At",
+"Status",
+"Article URL",
+"Announcement Type",
+"Scholar(s) Named",
+"Submitter Name",
+"Submitter Email",
+"Submitter Note",
+"Reviewed By",
+"Reviewed At",
+"Decision Notes",
+"News ID",
+"Event Details",
+"Flyer File ID",
+"QR Image File ID"
+]
+],
+"Scholars": [
+[
+"Scholars"
+],
+[],
+[],
+[
+"Scholar ID",
+"Scholar Name",
+"Title / Salutation",
+"Family Name",
+"Given Names",
+"Gender",
+"Year of Birth",
+"Alive / Deceased",
+"Year of Death",
+"Reserved Cultural Affiliation",
+"Moku Paternal",
+"Ahupuaʻa Paternal",
+"Island Paternal",
+"Locality / Site Paternal",
+"Moku Maternal",
+"Ahupuaʻa Maternal",
+"Island Maternal",
+"Locality / Site Maternal",
+"Provenance / Evidence Notes",
+"Primary Discipline / Field",
+"Current Title / Role",
+"Current Institution",
+"Institution Country",
+"Current Department / Unit",
+"Highest Completed Degree",
+"Current PG Status",
+"Degree Episodes",
+"Outside Hawaiʻi Degree Episodes",
+"Hawaiʻi Degree Episodes",
+"Funding Episodes",
+"Awards Count",
+"Gold Medals / Prizes Count",
+"Linked Publication Count",
+"First-Author Publication Count",
+"Current Leadership Category",
+"Current Leadership Level",
+"Current Profile URL",
+"ORCID / Researcher ID",
+"Google Scholar URL",
+"Review Status",
+"Roster Tier",
+"Source Basis",
+"BibTeX Author Match (roster)",
+"BibTeX Author Occurrences (roster)",
+"Name Variants / Aliases",
+"Record Notes",
+"Scholar Share Token",
+"Scholar Share URL",
+"",
+"",
+"Preferred Family Name",
+"Identity Verification Status",
+"Identity Evidence",
+"Identity Source ID",
+"Identity Last Checked",
+"Paternal Lineage / Evidence",
+"Maternal Lineage / Evidence",
+"Birth / Upbringing Geography",
+"Current Institution ID",
+"Photo URL",
+"Public Display Approved",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By",
+"Retired",
+"State / Territory (current)",
+"County (current)"
+]
+],
+"Review Queue": [
+[
+"Review Queue"
+],
+[],
+[],
+[
+"Scholar ID",
+"Scholar Name",
+"Gender",
+"Review Status",
+"Review Notes",
+"Roster Tier",
+"In Confirmed Roster?",
+"Source Basis",
+"BibTeX Author Match",
+"BibTeX Author Occurrences",
+"Name Variants / Aliases"
+]
+],
+"Scholar Profile Submissions": [
+[
+"Scholar Profile Submissions"
+],
+[],
+[],
+[
+"Submission ID",
+"Submitted At",
+"Status",
+"Scholar ID",
+"Scholar Name",
+"Submitter Name",
+"Submitter Email",
+"Relationship",
+"Profile URL",
+"Submitted Fields JSON",
+"Structured Submission JSON",
+"Attachments JSON",
+"Review Notes",
+"Reviewed By",
+"Reviewed At",
+"Resolution"
+]
+],
+"Publications": [
+[
+"Publications"
+],
+[],
+[],
+[
+"Publication ID / BibTeX Key",
+"Entry Type",
+"Publication Type",
+"Title",
+"Year",
+"Journal / Book Title",
+"Publisher / Institution / School",
+"DOI",
+"URL",
+"Keywords",
+"Abstract",
+"Tagged Hawaiʻi?",
+"Tagged Native Hawaiian?",
+"Thesis Level",
+"Linked Native Hawaiian Scholar Count",
+"Auth_Lead Scholar ID",
+"Co-Auth_Scholar IDs",
+"Record Source",
+"Source Database / Repository",
+"Discovery / Source URL",
+"Deduplication Key",
+"Bibliographic Lead Author",
+"Bibliographic Author Count",
+"Hawaiʻi",
+"Maui",
+"Oʻahu",
+"Kauaʻi",
+"Molokaʻi",
+"Lānaʻi",
+"Niʻihau",
+"Kahoʻolawe",
+"Reserved geography 1",
+"Reserved geography 2",
+"Reserved geography 3",
+"Reserved geography 4",
+"Reserved geography 5",
+"Reserved geography 6",
+"Hawaiʻi—location unspecified",
+"Uncertain",
+"BibTeX Key",
+"Publication Status",
+"Authors — Full Ordered List",
+"Volume",
+"Issue",
+"Pages",
+"Handle / ISBN",
+"Open Access URL",
+"Language",
+"About Country?",
+"Dedup Status",
+"Merged Into",
+"Verification Status",
+"Source ID",
+"Last Checked",
+"Record Notes",
+"Public Display Approved",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"Linked Male?",
+"Linked Female?",
+"Lead Male?",
+"Lead Female?",
+"Coauthor Male?",
+"Coauthor Female?"
+]
+],
+"Identity Review": [
+[
+"Identity Review"
+],
+[],
+[],
+[
+"Scholar ID",
+"Scholar Name",
+"Family Name",
+"Given Names",
+"Gender",
+"Alive / Deceased",
+"Reserved Cultural Affiliation",
+"Moku Paternal",
+"Ahupuaʻa Paternal",
+"Island Paternal",
+"Locality / Site Paternal",
+"Moku Maternal",
+"Ahupuaʻa Maternal",
+"Island Maternal",
+"Locality / Site Maternal",
+"Provenance / Evidence Notes",
+"Primary Discipline / Field",
+"Current Title / Role",
+"Current Institution",
+"Institution Country",
+"Current Department / Unit",
+"Highest Completed Degree",
+"Current PG Status",
+"Degree Episodes",
+"Outside Hawaiʻi Degree Episodes",
+"Hawaiʻi Degree Episodes",
+"Funding Episodes",
+"Awards Count",
+"Gold Medals / Prizes Count",
+"Linked Publication Count",
+"First-Author Publication Count",
+"Current Leadership Category",
+"Current Leadership Level",
+"Current Profile URL",
+"ORCID / Researcher ID",
+"Google Scholar URL",
+"Review Status",
+"Roster Tier",
+"Source Basis",
+"BibTeX Author Match (roster)",
+"BibTeX Author Occurrences (roster)",
+"Name Variants / Aliases",
+"Record Notes"
+]
+],
+"Dashboard": [
+[
+"Hawaiian Scholar Database Dashboard"
+],
+[],
+[],
+[
+"Active Native Hawaiian scholars",
+"",
+"",
+"Female",
+"",
+"Male",
+"",
+"Gender unknown / verify"
+]
+],
+"Publication Geography Submissio": [
+[
+"Publication Geography Submissio"
+],
+[],
+[],
+[
+"Submission ID",
+"Submitted At",
+"Status",
+"Scholar ID",
+"Scholar Name",
+"Submitter Name",
+"Submitter Email",
+"Relationship",
+"Profile URL",
+"Publication Key",
+"Publication Title",
+"Year",
+"Existing Hawaiʻi Islands",
+"Proposed Hawaiʻi Islands",
+"Proposed Pacific Countries",
+"Proposed Other Countries",
+"Review Notes",
+"Reviewed By",
+"Reviewed At",
+"Resolution",
+"Proposed Locations JSON"
+]
+],
+"Graduate Degrees": [
+[
+"Graduate Degrees"
+],
+[],
+[],
+[
+"Degree ID",
+"Scholar ID",
+"Scholar Name",
+"Degree Stage",
+"Degree / Qualification",
+"Short Discipline",
+"Field / Discipline",
+"Broad discipline",
+"C_Uni name",
+"O_Uni name",
+"Country",
+"Outside Hawaiʻi?",
+"City",
+"Region",
+"Year / Status",
+"Completion Status",
+"Thesis / Research Title",
+"Thesis / Repository URL",
+"Evidence URL 1",
+"Evidence URL 2",
+"Verification",
+"Notes",
+"Start Year",
+"Finish / Completion Year",
+"Duration (years)",
+"Study Date Evidence / Notes",
+"Institution ID",
+"Thesis Publication ID",
+"Supervisor(s)",
+"Funding ID",
+"Last Checked",
+"Public Display Approved",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By",
+"International study?"
+]
+],
+"Non-Completed Degrees": [
+[
+"Non-Completed Degrees"
+],
+[],
+[],
+[
+"Non-Completed Degree ID",
+"Scholar ID",
+"Scholar Name",
+"Degree Stage",
+"Degree / Qualification Pursued",
+"Field / Discipline",
+"Institution",
+"Country",
+"Outside Hawaiʻi?",
+"City",
+"Region",
+"Start Year",
+"Last Documented Year",
+"Non-Completion Status",
+"Reason / Outcome",
+"Evidence URL 1",
+"Evidence URL 2",
+"Verification",
+"Notes",
+"Broad Discipline",
+"Short Discipline",
+"Institution ID",
+"Original University Name (O_Uni)",
+"Completion Year",
+"Completion Status",
+"Duration (years)",
+"Thesis / Dissertation Title",
+"Thesis Publication ID",
+"Thesis URL / Handle",
+"Supervisor(s)",
+"Funding ID",
+"Last Checked",
+"Public Display Approved",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By",
+"International study?"
+]
+],
+"Scholarships & Funding": [
+[
+"Scholarships & Funding"
+],
+[],
+[],
+[
+"Funding ID",
+"Scholar ID",
+"Scholar Name",
+"Degree Stage / Career Stage",
+"Degree Year / Status",
+"University / Host",
+"Destination Country",
+"Award Year(s)",
+"Scholarship / Fellowship / Funding",
+"Sponsor / Funder",
+"Funder Country / System",
+"Funding Type",
+"Whole Degree?",
+"Confidence",
+"Evidence URL 1",
+"Evidence URL 2",
+"Evidence Note",
+"",
+"Degree ID",
+"Program",
+"Start Year",
+"End Year",
+"Amount (public only)",
+"Currency",
+"Verification Status",
+"Record Notes",
+"Public Display Approved",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By"
+]
+],
+"Scholar Submission Blocklist": [
+[
+"Scholar Submission Blocklist"
+],
+[],
+[],
+[
+"Email",
+"Submitter Name",
+"Banned At",
+"Banned By",
+"Source Submission ID",
+"Reason",
+"Status"
+]
+],
+"Interesting": [
+[
+"Interesting"
+],
+[],
+[],
+[
+"Interesting ID",
+"Scholar ID",
+"Scholar Name",
+"Category",
+"Claim / Milestone",
+"Milestone Year",
+"Year Precision",
+"Institution",
+"Country",
+"Source Title",
+"Source Date",
+"Source URL",
+"Evidence / Context",
+"Verification Status",
+"Panel D Candidate?",
+"Notes"
+]
+],
+"Awards & Honours": [
+[
+"Awards & Honours"
+],
+[],
+[],
+[
+"Award ID",
+"Scholar ID",
+"Scholar Name",
+"Award Year",
+"Award / Recognition",
+"Category",
+"Gold Medal / Prize?",
+"Qualification / Career Stage",
+"Awarding Body",
+"Country",
+"Verification Status",
+"Source URL",
+"Verification Note",
+"Counts Toward Award Total?",
+"",
+"Related Degree ID",
+"Related Publication ID",
+"Public Display Approved",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By"
+]
+],
+"Positions": [
+[
+"Positions"
+],
+[],
+[],
+[
+"Position ID",
+"Scholar ID",
+"Scholar Name",
+"Institution",
+"Country",
+"Department / Unit",
+"Academic / Professional Title (verbatim)",
+"Standardized Academic Rank",
+"Leadership Title (verbatim)",
+"Standardized Leadership Category",
+"Leadership Level",
+"Role Status",
+"Start Year",
+"End Year",
+"Source URL",
+"Evidence / Notes",
+"Last Verified",
+"",
+"Institution ID",
+"Employment Type",
+"Profile URL",
+"Verification Status",
+"Record Notes",
+"Public Display Approved",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By"
+]
+],
+"M>PhD mobility": [
+[
+"M>PhD mobility"
+],
+[],
+[],
+[
+"Scholar ID",
+"Degree(s)",
+"scholar_id",
+"scholar",
+"last",
+"first",
+"New?",
+"m_uni",
+"m_in",
+"m_city",
+"m_country",
+"m_region",
+"m_lon",
+"m_lat",
+"m_year",
+"m_title",
+"p_uni",
+"p_in",
+"p_city",
+"p_country",
+"p_region",
+"p_lon",
+"p_lat",
+"p_year",
+"p_title",
+"Info link1",
+"Info link2",
+"Notes"
+]
+],
+"Mobility Summary": [
+[
+"Postgraduate study destinations"
+],
+[],
+[],
+[
+"Destination country",
+"Degree episodes",
+"Outside Hawaiʻi?",
+"",
+"Mobility measure",
+"Episodes"
+]
+],
+"Deep Dive Summary": [
+[
+"Country research coverage"
+],
+[],
+[],
+[
+"Country",
+"Deep Dive Level",
+"Main universities / repositories searched",
+"Distinct Native Hawaiian scholars identified",
+"Master's scholars",
+"PhD / Doctorate scholars",
+"Degree episodes",
+"Universities with identified scholars",
+"Audit scope / caveat"
+]
+],
+"Programme Cohort Audit": [
+[
+"Programme Cohort Audit"
+],
+[],
+[],
+[
+"Academic Year",
+"Archive Status",
+"Known Programme Slots / Cohort Size",
+"Named Programme Awardees Recovered",
+"PG / PhD Awardees Recovered",
+"Confirmed Core-Native Hawaiian PG / PhD",
+"Core Scholar IDs",
+"Other Native Hawaiian / PG Leads",
+"Primary Evidence URL",
+"Audit Notes"
+]
+],
+"Authorship": [
+[
+"Authorship"
+],
+[],
+[],
+[
+"Authorship ID",
+"Scholar ID",
+"Scholar Name",
+"Publication ID / BibTeX Key",
+"Author Name as Recorded",
+"Author Position",
+"Is First Author?",
+"",
+"Corresponding Author?",
+"Affiliation at Publication",
+"Match Basis",
+"Verification Status",
+"Evidence Source ID",
+"Reconciliation Notes",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By",
+"Coauthor list accumulation"
+]
+],
+"Degree Publication Metrics": [
+[
+"Degree Publication Metrics"
+],
+[],
+[],
+[
+"Degree ID",
+"Scholar ID",
+"Scholar Name",
+"Gender",
+"Degree Stage",
+"Degree / Qualification",
+"Field / Discipline",
+"Institution",
+"Country",
+"Start Year",
+"Finish Year",
+"Duration (years)",
+"Completion Status",
+"Career Journal Articles",
+"Career Lead Articles",
+"Career Co-authored Articles",
+"During Degree — Any",
+"During Degree — Lead",
+"During Degree — Co-author",
+"After Degree — Any",
+"After Degree — Lead",
+"After Degree — Co-author",
+"First 5y After — Any",
+"First 5y After — Lead",
+"First 5y After — Co-author",
+"First Journal Article Year",
+"Years Finish → First Post-degree Article",
+"Lead Share of Career Articles",
+"Timing / Completeness Flag",
+"Method Note"
+]
+],
+"Research Geography": [
+[
+"Research Geography"
+],
+[],
+[],
+[
+"Geography Record ID",
+"Publication ID / BibTeX Key",
+"Scholar ID (optional)",
+"Geography Type",
+"Country",
+"Hawaiʻi Island",
+"Moku",
+"Locality / Site",
+"Reserved Cultural Affiliation",
+"Coding Basis / Evidence",
+"Source URL / Note",
+"Verification",
+"Last Checked",
+"",
+"Latitude",
+"Longitude",
+"Sensitivity",
+"Multi-Attribution Group ID",
+"Public Display Approved",
+"Record Notes",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By",
+"State / Territory",
+"County",
+"Ahupuaʻa"
+]
+],
+"Institution Publication Require": [
+[
+"Institution Publication Require"
+],
+[],
+[],
+[
+"Institution",
+"Country",
+"Degree Episodes",
+"Degree Level / Thesis Format",
+"Requirement Classification",
+"Minimum Publications / Manuscripts",
+"Lead-author Requirement",
+"Accepted vs Published",
+"Effective / Policy Era",
+"Official Source URL",
+"Policy Evidence / Interpretation",
+"Historical Notes",
+"Verification Status",
+"Last Checked"
+]
+],
+"Institutions": [
+[
+"Institutions"
+],
+[],
+[],
+[
+"Institution",
+"Country",
+"Study Source?",
+"Work Source?",
+"Degree Episodes",
+"Current Position Records",
+"Total Link Records",
+"Region",
+"Longitude",
+"Latitude",
+"Institution ID",
+"Original Name / Alias",
+"Institution Type",
+"City / Locality",
+"Website",
+"Name Status",
+"Active",
+"Source ID",
+"Record Notes",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By",
+"State / Territory",
+"Hawaiʻi Island",
+"In Hawaiʻi?"
+]
+],
+"Source Register": [
+[
+"Source Register"
+],
+[],
+[],
+[
+"Source ID",
+"Source Type",
+"Reference",
+"Used For",
+"Confidentiality",
+"Notes",
+"URL",
+"DOI / Handle",
+"Repository / Institution",
+"Country",
+"Reliability Tier",
+"Accessed Date",
+"Archive URL",
+"Created At",
+"Created By",
+"Updated At",
+"Updated By"
+]
+],
+"Lookups": [
+[
+"Controlled vocabularies and evidence-backed lookups"
+],
+[],
+[],
+[
+"Female",
+"Alive",
+"Unreviewed",
+"Master's",
+"None",
+"Journal Article",
+"Hawaiʻi",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"",
+"Education",
+"Education",
+"Education",
+"",
+"To be defined",
+"To be defined",
+"To be defined"
+]
+],
+"Change Log": [
+[
+"Change Log"
+],
+[],
+[],
+[
+"Version",
+"Date",
+"Change",
+"Scope / Impact",
+"Source"
+]
+],
+"Coauthor Network": [
+[
+"Coauthor Network"
+],
+[],
+[],
+[
+"Network Summary",
+"Value"
+]
+],
+"Provenance Evidence Audit": [
+[
+"Provenance Evidence Audit"
+],
+[],
+[],
+[
+"Scholar ID",
+"Scholar Name",
+"Gender",
+"Existing Paternal Reserved Cultural Affiliation",
+"Existing Paternal Moku",
+"Existing Paternal Ahupuaʻa",
+"Existing Paternal Locality",
+"Existing Maternal Moku",
+"Existing Maternal Ahupuaʻa",
+"Existing Maternal Locality",
+"Existing Provenance Notes",
+"Evidence Relationship Type",
+"Evidence Paternal Moku",
+"Evidence Paternal Ahupuaʻa",
+"Evidence Paternal Locality",
+"Evidence Maternal Moku",
+"Evidence Maternal Ahupuaʻa",
+"Evidence Maternal Locality",
+"Evidence General Moku",
+"Evidence General Ahupuaʻa / Island",
+"Evidence General Locality",
+"Source / Evidence Summary",
+"Source URL",
+"Confidence",
+"Research Status",
+"Identity / Method Notes"
+]
+],
+"Diplomatic Scholarship Audit": [
+[
+"Diplomatic Scholarship Audit"
+],
+[],
+[],
+[
+"Audit ID",
+"Mission Country",
+"Mission / Office",
+"Scholarship / Programme",
+"Year / Cohort",
+"Recipient / Public Record",
+"Degree / Programme",
+"Institution / Host",
+"Scholar ID",
+"Native Hawaiian Assessment",
+"Master File Action",
+"Source URL 1",
+"Source URL 2",
+"Evidence / Notes",
+"Audit Status"
+]
+],
+"Institution A Thesis Audit": [
+[
+"Institution A Thesis Audit"
+],
+[],
+[],
+[
+"Publication ID",
+"Scholar ID",
+"Thesis Title",
+"Year",
+"Imported Thesis Level",
+"Imported Entry Type",
+"Institution",
+"Repository URL",
+"Same-Stage Degree Count",
+"Exact-Year Match Count",
+"Audit Flag",
+"Notes / Verification",
+"Last Audit"
+]
+],
+"Institution A Graduation Audit": [
+[
+"Institution A Graduation Audit"
+],
+[],
+[],
+[
+"Degree ID",
+"Scholar ID",
+"Scholar Name",
+"Degree Stage",
+"Qualification",
+"Award Year",
+"Thesis Title",
+"Thesis / Repository URL",
+"Degree Verification",
+"Graduation Name-List Status",
+"Graduation Evidence URL",
+"Graduation Evidence Notes",
+"Last Checked"
+]
+],
+"Institution B Thesis Audit": [
+[
+"Institution B Thesis Audit"
+],
+[],
+[],
+[
+"Publication ID",
+"Scholar ID",
+"Thesis Title",
+"Year",
+"Imported Thesis Level",
+"Publication Type",
+"Institution",
+"Repository URL",
+"Old Tagged Native Hawaiian?",
+"Identity Link Status",
+"Audit Flag",
+"Notes / Verification",
+"Last Audit"
+]
+],
+"Local Issues & Sources": [
+[
+"Local Issues & Sources"
+],
+[],
+[],
+[
+"Source ID",
+"Title",
+"Author / Organization",
+"Date",
+"Source Type",
+"URL",
+"Access Date",
+"Moku",
+"Ahupuaʻa",
+"Island",
+"Locality / Site",
+"Geographic Scale",
+"Issue / Theme",
+"Concern / Burning Question",
+"Affected Group / Ecosystem",
+"Time Period",
+"Action Requested",
+"Action Taken / Response",
+"Actors",
+"Funding",
+"Credibility / Corroboration",
+"Verification",
+"Plain-Language Summary",
+"Related Publication IDs"
+]
+],
+"Local Research Relationships": [
+[
+"Local Research Relationships"
+],
+[],
+[],
+[
+"Relationship ID",
+"Island",
+"Moku",
+"Ahupuaʻa / Locality / Site",
+"Researcher / Organization",
+"Relationship Type",
+"Start Year",
+"Latest Year",
+"Duration / Threshold",
+"Evidence Status",
+"Linked Outputs / Activities",
+"Local Partners",
+"Student / Supervisor Lineage",
+"Funding",
+"Evidence URL",
+"Verification"
+]
+],
+"Native Hawaiian Researchers": [
+[
+"Native Hawaiian Researchers"
+],
+[],
+[],
+[
+"Researcher ID",
+"Researcher Name",
+"Title / Salutation",
+"Family Name",
+"Given Names",
+"Gender",
+"Native Hawaiian Status",
+"Researcher Status",
+"Master’s / PhD Status",
+"Highest Degree Known",
+"Current / Last Role",
+"Current / Last Institution",
+"Research Areas",
+"Moku Paternal",
+"Ahupuaʻa Paternal",
+"Island Paternal",
+"Locality Paternal",
+"Moku Maternal",
+"Ahupuaʻa Maternal",
+"Island Maternal",
+"Locality Maternal",
+"ORCID",
+"Profile URL",
+"Identity Evidence URL",
+"Degree Search Evidence",
+"Notes",
+"Last Checked"
+]
+],
+"Researcher Authorship": [
+[
+"Researcher Authorship"
+],
+[],
+[],
+[
+"Researcher Authorship ID",
+"Researcher ID",
+"Researcher Name",
+"Publication ID / BibTeX Key",
+"Author Name as Recorded",
+"Author Position",
+"Is First Author?",
+"Role / Contribution",
+"Affiliation at Publication",
+"Evidence URL",
+"Verification",
+"Last Checked"
+]
+],
+"Repository Reconciliation": [
+[
+"Source row"
+],
+[],
+[],
+[]
+],
+"Repository Follow-up": [
+[
+"Source row"
+],
+[],
+[],
+[]
+],
+"Data Dictionary": [
+[
+"Native Hawaiian Master — Data Dictionary"
+],
+[],
+[],
+[
+"Tab",
+"Column",
+"Type",
+"Required?",
+"Vocabulary",
+"Derived?",
+"Public?",
+"Description"
+]
+],
+"QA Checks": [
+[
+"Native Hawaiian Master — QA Checks"
+],
+[],
+[],
+[
+"Check ID",
+"Integrity Check",
+"Status",
+"Issue Count",
+"Affected Table",
+"Severity",
+"Rule",
+"Repair Guidance",
+"Last Run",
+"Notes"
+]
+],
+"Public Export Config": [
+[
+"Native Hawaiian Master — Public Export Config"
+],
+[],
+[],
+[
+"Table",
+"Field",
+"Publicly Exportable",
+"Condition",
+"Reason / Privacy Rule",
+"Transformer Action",
+"Default",
+"Last Reviewed",
+"Reviewer",
+"Notes"
+]
+],
+"News": [
+[
+"News"
+],
+[],
+[],
+[
+"News ID",
+"Scholar ID",
+"Scholar Display Name",
+"Category",
+"Headline",
+"Outlet",
+"Publication Date",
+"Article URL",
+"Image URL",
+"Image Credit",
+"Summary",
+"Also Covered By",
+"Show on Dashboard",
+"Added By",
+"Added On",
+"Notes",
+"Announcement Type",
+"Event Time",
+"Event Location"
+]
+]
+}

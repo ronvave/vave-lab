@@ -1,7 +1,7 @@
 /* Hawaiʻi scholar sharing and reviewed submissions. No admin credentials here. */
 (function(){
 'use strict';
-const ENDPOINT='https://script.google.com/macros/s/REPLACE_WITH_HAWAII_DEPLOYMENT/exec';
+const ENDPOINT='https://script.google.com/macros/s/AKfycbyziH2L0BcX_BsnR9fljFYhW71yx15dM97Fb9-gOEOjZnLUq5c25J-lGG_2J2fCf7VqtA/exec';
 const CLANS=window.HAWAII_CLANS||[];
 const DIVISIONS=['Hawaiʻi',"Maui","Oʻahu","Kauaʻi",'Molokaʻi','Lānaʻi',"Niʻihau","Kahoʻolawe"];
 const PACIFIC=['American Samoa','Australia','Cook Islands','Fiji','French Polynesia','Guam','Kiribati','Marshall Islands','Micronesia (Federated States of)','Nauru','New Caledonia','New Zealand','Niue','Northern Mariana Islands','Palau','Papua New Guinea','Pitcairn','Samoa','Solomon Islands','Tokelau','Tuvalu','Vanuatu','Wallis and Futuna'];
