@@ -137,6 +137,19 @@ def main():
                 if kw: out['kw'] = kw; n['keyword sets'] += 1
                 if sm: out['sm'] = sm; n['summaries'] += 1
         report.append(f'{code} {kind}: ' + (', '.join(f'{k} {v}' for k, v in sorted(n.items())) or 'nothing usable'))
+    # Country Admin photo uploads saved as img/scholars/<Scholar ID>.jpg (for
+    # example Samoa and Hawaiʻi), used when neither the Master nor the country
+    # enrichment gives a photo.
+    master_ph = {s['id'] for s in dirdata.get('scholars', []) if s.get('ph')}
+    nf = 0
+    for sid in sorted(ids - master_ph):
+        if (extras.get(sid) or {}).get('ph'):
+            continue
+        for ext in ('jpg', 'jpeg', 'png', 'webp'):
+            rel = f'img/scholars/{sid}.{ext}'
+            if PHOTO_PATH.match(rel) and (ROOT / rel).is_file():
+                extras.setdefault(sid, {})['ph'] = rel; nf += 1; break
+    report.append(f'ID-named photo files: {nf}')
     extras = {k: v for k, v in extras.items() if v}
     for line in report:
         print(line, file=sys.stderr)

@@ -22,7 +22,7 @@
   const CARD_SUB = {};
   // Card titles. Long names get a smaller size so every title stays on one line.
   const CARD_NAME = { FSM: 'FSM' };
-  const CARD_LONG = { SLB: 1, MHL: 1 };
+  const CARD_LONG = {};
   // Crop point for each card photo (x y), matched to the approved mock-up.
   const CARD_FOCUS = { FJI: '40% 50%', TON: '50% 45%', VUT: '45% 55%', SLB: '45% 60%', WSM: '50% 22%', COK: '45% 25%', MHL: '30% 50%', FSM: '55% 45%', TUV: '50% 50%', KIR: '25% 35%', PLW: '50% 60%', HAW: '50% 55%' };
   const METRICS = {
@@ -298,7 +298,8 @@
   const B_HEAD = { scholars: 'Indigenous Scholars by Country', phd: 'Completed PhDs by Country', masters: "Completed Master's by Country" };
   const B_UNIT = { scholars: 'Indigenous scholars', phd: 'completed PhDs', masters: "completed Master's" };
   const B_MINI = { scholars: 'Scholars', phd: 'PhDs', masters: "Master's" };
-  const B_NAME = { FSM: 'FSM' };
+  // A1 cards only: short names so every country fits on one line.
+  const B_NAME = { FSM: 'FSM', SLB: 'Solomon Is', COK: 'Cook Is', MHL: 'Marshall Is' };
   function renderCards(olSel, titleSel, photo = false) {
     const ol = $(olSel); if (!ol) return;
     const m = METRICS[state.metric];

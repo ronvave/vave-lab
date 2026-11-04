@@ -455,13 +455,11 @@
       root.innerHTML = `<p class="dir__intro">${esc(err.message || 'The directory could not be opened.')}</p>`;
     }
   }
-  // Panel B1 uses the same profile photo as the country card, for the four
-  // live dashboards only. A unique name match is required so a shared family
-  // name never shows the wrong person.
-  const DASH_PHOTO = new Set(['FJI', 'TON', 'SLB', 'VUT']);
+  // Panel B1 uses the same profile photo as the regional card, for every
+  // country. A unique name match is required so a shared family name never
+  // shows the wrong person.
   const bare = person => fold(person).replace(/^(dr|mr|ms|prof|sir)\s+/, '');
   function scholarPhoto(code, person) {
-    if (!DASH_PHOTO.has(code)) return '';
     const want = bare(person).split(/\s+/).filter(Boolean);
     if (want.length < 2) return '';
     const given = want[0], fam = want.slice(1);

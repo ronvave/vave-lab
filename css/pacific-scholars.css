@@ -1096,7 +1096,7 @@ a.ps-b-card__btn:focus-visible { outline: 3px solid #e3a51b; outline-offset: 2px
 .ps-a1dark .ps-a1b__title { color: #fff; }
 .ps-a1dark .ps-a1b__rule { background: #fff; opacity: .45; }
 .ps-a1dark .ps-a1b__legend, .ps-a1dark .ps-a1b__order { color: #fff; }
-.ps-a1dark .ps-a1b__hint { color: var(--ps-text-muted); }
+.ps-a1dark .ps-a1b__hint { color: #FFFF00; }
 .ps-a1dark .ps-a1b__dot--live { background: #fff; }
 .ps-a1dark .ps-a1b__dot--dev { background: transparent; border-color: #fff; }
 .ps-a1dark .ps-a1b__seg { background: rgba(255,255,255,.08); border-color: var(--ps-line); }
