@@ -18,7 +18,8 @@
   "countries": [
     { "code": "FJI", "logos": ["FNU"], "people": [
       { "name": "Unaisi Nabobo-Baba", "title": "Prof", "role": "Vice Chancellor", "inst": "FNU", "vc": true, "key": true, "photo": "img/regional/collab/unaisi-nabobo-baba.webp" },
-      { "name": "Ron Vave", "title": "Prof", "role": "Assistant Professor, Center for Pacific Islands Studies", "inst": "UHM", "key": true, "photo": "img/regional/collab/ron-vave.webp" }
+      { "name": "Ron Vave", "title": "Prof", "role": "Assistant Professor, Center for Pacific Islands Studies", "inst": "UHM", "key": true, "photo": "img/regional/collab/ron-vave.webp" },
+      { "name": "Jimaima Lako", "title": "Prof", "role": "Pro Vice Chancellor (Learning and Teaching)", "inst": "FNU", "photo": "img/regional/collab/jimaima-lako.webp" }
     ] },
     { "code": "TON", "logos": ["BYUH"], "people": [
       { "name": "Tēvita Ka'ili", "title": "Prof", "inst": "BYUH", "key": true, "photo": "img/regional/collab/tevita-kaili.webp" },
@@ -31,7 +32,8 @@
       { "name": "Rita Sahu", "title": "Ms", "inst": "SINU" }
     ] },
     { "code": "WSM", "logos": ["NUS"], "people": [
-      { "name": "Tuifuisa'a Patila Amosa", "title": "Prof", "role": "Vice Chancellor", "inst": "NUS", "vc": true, "key": true, "photo": "img/regional/collab/tuifuisaa-patila-amosa.webp" }
+      { "name": "Tuifuisa'a Patila Amosa", "title": "Prof", "role": "Vice Chancellor", "inst": "NUS", "vc": true, "key": true, "photo": "img/regional/collab/tuifuisaa-patila-amosa.webp" },
+      { "name": "Aleluia Taise-Uili", "title": "Dr", "role": "Manager Research, Principal Scientist", "inst": "NUS", "photo": "img/regional/collab/aleluia-taise-uili.webp" }
     ] },
     { "code": "VUT", "logos": ["NUV"], "people": [
       { "name": "Jean-Pierre Nirua", "role": "Vice Chancellor", "inst": "NUV", "vc": true, "key": true, "photo": "img/regional/collab/jean-pierre-nirua.webp" }
