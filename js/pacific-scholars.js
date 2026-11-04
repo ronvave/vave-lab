@@ -148,11 +148,16 @@
     history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
   }
 
+  // "Built" is the date the regional dashboard was first created (commit
+  // f332c25, 2026-10-18T00:45Z = 17 Oct 2026, 2:45 PM HST). "Latest update" is
+  // the most recent edit across the country Master files. Both shown in HST.
+  const PS_CREATED = '2026-10-18T00:45:14Z';
   function renderFresh() {
-    const g = new Date(D.generated);
-    const latest = D.sources.filter(s => s.modified).map(s => new Date(s.modified)).sort((a, b) => b - a)[0];
-    const opts = { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' };
-    $('#ps-fresh').textContent = `Built ${g.toLocaleString(undefined, opts)} from ${D.sources.filter(s => s.file).length} country Master files` + (latest ? ` · latest Master edit ${latest.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '');
+    const hst = { timeZone: 'Pacific/Honolulu' };
+    const latest = D.sources.filter(s => s.modified).map(s => new Date(s.modified)).sort((a, b) => b - a)[0] || new Date(D.generated);
+    const built = new Date(PS_CREATED).toLocaleDateString('en-US', { ...hst, day: 'numeric', month: 'short', year: 'numeric' });
+    const upd = latest.toLocaleString('en-US', { ...hst, day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    $('#ps-fresh').textContent = `Built ${built} from ${D.sources.filter(s => s.file).length} country Master files · Latest update ${upd} HST`;
   }
 
   function totals(list = countries()) {
