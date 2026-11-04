@@ -104,14 +104,14 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .db-about.tph-panel { overflow: hidden; }
 .db-about.tph-panel[open] > summary.tph-hero { margin-bottom: 14px !important; }
 
-/* Woven mat background on every panel body, softened with a light veil so
-   text and charts in front of it stay crisp. */
+/* Faded brown taro leaf background on every panel body, softened with a light
+   veil so text and charts in front of it stay crisp. */
 .tph-panel {
   background:
-    linear-gradient(rgba(251,248,242,.64), rgba(251,248,242,.64)),
-    url("../img/hawaii/mat-background.webp") center top / 1400px auto repeat !important;
+    linear-gradient(rgba(253,250,245,.88), rgba(253,250,245,.88)),
+    url("../img/hawaii/taro-brown-background.webp?v=1") center top / 900px auto repeat !important;
 }
-/* Former grey inner areas let the mat through, with a slightly stronger veil. */
+/* Former grey inner areas let the taro leaves through, with a slightly stronger veil. */
 .tph-panel .db-world-panel-wide,
 .tph-panel .db-map-legend-panel,
 .tph-panel .short-disciplines-toggle,
