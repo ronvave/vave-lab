@@ -18,18 +18,18 @@
   "countries": [
     { "code": "FJI", "logos": ["FNU"], "people": [
       { "name": "Unaisi Nabobo-Baba", "title": "Prof", "role": "Vice Chancellor", "inst": "FNU", "vc": true, "key": true, "photo": "img/regional/collab/unaisi-nabobo-baba.webp" },
-      { "name": "Ron Vave", "title": "Prof", "role": "Assistant Professor, Center for Pacific Islands Studies", "inst": "UHM", "key": true, "photo": "img/regional/collab/ron-vave.webp" },
-      { "name": "Jimaima Lako", "title": "Prof", "role": "Pro Vice Chancellor (Learning and Teaching)", "inst": "FNU", "photo": "img/regional/collab/jimaima-lako.webp" }
+      { "name": "Jimaima Lako", "title": "Prof", "role": "Pro Vice Chancellor (Learning and Teaching)", "inst": "FNU", "photo": "img/regional/collab/jimaima-lako.webp" },
+      { "name": "Ron Vave", "title": "Prof", "role": "Assistant Professor, Center for Pacific Islands Studies", "inst": "UHM", "key": true, "photo": "img/regional/collab/ron-vave.webp" }
     ] },
     { "code": "TON", "logos": ["BYUH"], "people": [
       { "name": "Tēvita Ka'ili", "title": "Prof", "inst": "BYUH", "key": true, "photo": "img/regional/collab/tevita-kaili.webp" },
       { "name": "'Inoke Hafoka", "title": "Prof", "inst": "BYUH", "key": true, "photo": "img/regional/collab/inoke-hafoka.webp" },
-      { "name": "Ashton Finau", "role": "Master's student", "inst": "UHM" }
+      { "name": "Ashton Finau", "role": "Master's student", "inst": "UHM", "photo": "img/regional/collab/ashton-finau.webp" }
     ] },
     { "code": "SLB", "logos": ["SINU"], "people": [
       { "name": "Transform Aqorau", "title": "Prof", "role": "Vice Chancellor", "inst": "SINU", "vc": true, "key": true, "photo": "img/regional/collab/transform-aqorau.webp" },
       { "name": "Tarcisius Kabutaulaka", "title": "Prof", "inst": "UHM", "key": true, "photo": "img/regional/collab/tarcisius-kabutaulaka.webp" },
-      { "name": "Rita Sahu", "title": "Ms", "inst": "SINU" }
+      { "name": "Rita Sahu", "title": "Ms", "inst": "SINU", "photo": "img/regional/collab/rita-sahu.webp" }
     ] },
     { "code": "WSM", "logos": ["NUS"], "people": [
       { "name": "Tuifuisa'a Patila Amosa", "title": "Prof", "role": "Vice Chancellor", "inst": "NUS", "vc": true, "key": true, "photo": "img/regional/collab/tuifuisaa-patila-amosa.webp" },
@@ -43,6 +43,7 @@
     { "code": "PLW", "people": [] },
     { "code": "COK", "people": [] },
     { "code": "MHL", "people": [] },
-    { "code": "FSM", "people": [] }
+    { "code": "FSM", "people": [] },
+    { "code": "HAW", "people": [] }
   ]
 }
