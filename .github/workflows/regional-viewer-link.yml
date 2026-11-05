@@ -1,0 +1,81 @@
+name: Regional viewer link
+
+# Password-free, time-limited viewer link for the Regional dashboard.
+# The link opens data/regional-scholars.viewer.enc, a copy of the regional
+# bundle encrypted with the REGIONAL_VIEWER_KEY secret, so the real regional
+# passcode never reaches a viewer's browser (scripts/regional_viewer_access.py).
+# - Manual "create" starts the link with the chosen expiry; "remove" ends it.
+# - After each regional rebuild or patch merge, and hourly, "sync" refreshes the
+#   viewer copy only when the data changed, and deletes it once the expiry has
+#   passed, which ends the link for everyone.
+# Logs show only created / updated / removed / unchanged.
+on:
+  schedule:
+    - cron: "5 * * * *"
+  workflow_run:
+    workflows:
+      - Rebuild regional dashboard
+      - Merge regional dashboard data patch
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'create or remove'
+        type: choice
+        options: [create, remove]
+        default: create
+      expires:
+        description: 'Expiry (ISO 8601 with timezone)'
+        default: '2026-11-15T23:59:59-10:00'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: rotate-regional-passcode
+  cancel-in-progress: false
+
+jobs:
+  link:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Skip quietly when no link is active
+        id: pre
+        run: |
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ ! -f data/regional-viewer-access.json ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/setup-python@v5
+        if: steps.pre.outputs.skip != '1'
+        with:
+          python-version: '3.11'
+      - run: pip install --quiet cryptography
+        if: steps.pre.outputs.skip != '1'
+      - name: Create, sync or remove
+        id: run
+        if: steps.pre.outputs.skip != '1'
+        env:
+          REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
+          REGIONAL_VIEWER_KEY: ${{ secrets.REGIONAL_VIEWER_KEY }}
+          VIEWER_EXPIRES: ${{ github.event.inputs.expires }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then cmd="${{ github.event.inputs.action }}"; else cmd=sync; fi
+          out=$(python3 scripts/regional_viewer_access.py "$cmd")
+          echo "$out"
+          echo "result=$out" >> "$GITHUB_OUTPUT"
+      - name: Commit and deploy
+        if: steps.run.outputs.result == 'created' || steps.run.outputs.result == 'updated' || steps.run.outputs.result == 'removed'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- data/regional-scholars.viewer.enc data/regional-viewer-access.json
+          git commit -m "Regional viewer link: ${{ steps.run.outputs.result }}"
+          for i in 1 2 3 4; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done
+          gh workflow run deploy-pages-validated.yml --ref main

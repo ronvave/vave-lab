@@ -99,6 +99,37 @@
     });
     document.body.style.overflow = 'hidden';
     input.focus(); // passcode is held in memory only; never persisted
+    tryViewerLink(err);
+  }
+  // Time-limited viewer link (#view=<key>): the key opens a separate viewer
+  // copy of the data (data/regional-scholars.viewer.enc), so the regional
+  // passcode never reaches the viewer's browser. GitHub deletes the copy when
+  // the link expires, which ends it for everyone.
+  async function tryViewerLink(err) {
+    const m = /(?:^|[#&])view=([A-Za-z0-9_-]{24,})/.exec(location.hash);
+    if (!m) return;
+    err.textContent = 'Opening viewer link…';
+    let msg = 'This viewer link has ended. Please ask for a new link.';
+    try {
+      const meta = await fetch('data/regional-viewer-access.json?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.json() : null));
+      if (meta && Date.now() >= meta.expiresMs) msg = 'This viewer link has expired. Please ask for a new link.';
+      else if (meta) {
+        const res = await fetch('data/regional-scholars.viewer.enc?t=' + Date.now(), { cache: 'no-store' });
+        if (res.ok) {
+          msg = 'This viewer link is not valid.';
+          const buf = new Uint8Array(await res.arrayBuffer());
+          if (String.fromCharCode(...buf.slice(0, 4)) !== 'IVAV') throw new Error('format');
+          const key = await deriveKey(m[1], buf.slice(4, 20));
+          const data = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(20, 32) }, key, buf.slice(32))));
+          $('#ps-gate').hidden = true;
+          document.body.style.overflow = '';
+          err.textContent = '';
+          await boot(data);
+          return;
+        }
+      }
+    } catch (e) { msg = 'This viewer link is not valid.'; }
+    err.textContent = msg;
   }
 
   // ================= BOOT =================
