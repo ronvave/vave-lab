@@ -786,7 +786,9 @@
     const NS = 'http://www.w3.org/2000/svg';
     const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
     const cs = getComputedStyle(panel), COL = { male: cs.getPropertyValue('--ft-male').trim() || '#19c3d6', female: cs.getPropertyValue('--ft-female').trim() || '#ff3fa4' };
-    const R = FT.R, ROWH = 2 * R + 10, Y1 = new Date().getFullYear(), Y0 = FT.Y0;
+    const R = FT.R, ROWH = 2 * R + 10, Y1 = new Date().getFullYear();
+    // Start at 1950, or earlier when a recorded first predates it (e.g. 1942).
+    const Y0 = Math.min(FT.Y0, Math.floor(Math.min(...D.firsts.map(m => m.year).filter(Number.isFinite), FT.Y0) / 10) * 10);
     const W = chart.clientWidth || 880, padL = 18, padR = 18, top = 30;
     const xOf = y => padL + (y - Y0) / (Y1 - Y0) * (W - padL - padR);
     const items = D.firsts.filter(m => (FT.stage === 'both' || m.stage === FT.stage) && (FT.gender === 'both' || m.gender === FT.gender) && (!state.sel || m.code === state.sel)).map(m => ({ ...m }));
