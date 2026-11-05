@@ -331,7 +331,7 @@
 .nw.cn.nw--gold-tiles .nw__img:not(.is-split):not(:has(img))::after, .nw.cn.nw--gold-tiles .nw__img.is-split .nw-face:not(:has(img))::after, .nw.cn.nw--gold-tiles .pn-ac__ph:not(:has(img))::after {
   content: ""; position: absolute; left: -9%; bottom: -12%; width: 64%; max-width: none; aspect-ratio: 520 / 607; pointer-events: none;
   background: url("../img/fiji/a3-plumeria-fern.webp") left bottom / contain no-repeat; }
-.nw.cn.nw--gold-tiles .pn-ac__ph:not(:has(img)) .pn-ac__ini, .nw.cn.nw--gold-tiles .nw__img:not(.is-split) .nw__img__ini { position: relative; z-index: 1; }
+.nw.cn.nw--gold-tiles .pn-ac__ph:not(:has(img)) .pn-ac__ini, .nw.cn.nw--gold-tiles .nw__img:not(.is-split):not(:has(img)) .nw__img__ini { position: relative; z-index: 1; }
 .nw.cn.nw--gold-tiles .nw__av:not(.is-split):not(:has(img)), .nw.cn.nw--gold-tiles .nw__av.is-split .nw-face:not(:has(img)) {
   background: linear-gradient(160deg, rgba(62,34,6,.45) 0%, rgba(45,24,4,.68) 100%), #b07a30 url("../img/regional/a2-palm-mat.webp") left top / 180px auto repeat; }
 .nw.cn.nw--gold-tiles .nw__av__ini { text-shadow: 0 1px 3px rgba(0,0,0,.55); }
