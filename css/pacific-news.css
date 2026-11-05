@@ -258,6 +258,6 @@ button.pn-hm__cell:hover { outline: 2px solid #0d2b55; outline-offset: -2px; }
   content: ""; position: absolute; left: -9%; bottom: -12%; width: 64%; max-width: none; aspect-ratio: 520 / 607; pointer-events: none;
   background: url("../img/fiji/a3-plumeria-fern.webp") left bottom / contain no-repeat; }
 .pn .pn-ac__ph:not(:has(img)) .pn-ac__ini { position: relative; z-index: 1; }
-.pn .nw__img:not(.is-split) .nw__img__ini { z-index: 1; }
+.pn .nw__img:not(.is-split):not(:has(img)) .nw__img__ini { z-index: 1; }
 /* Note under the category buttons */
 
