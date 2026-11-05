@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
-"""Time-limited, password-free viewer copy of the Regional dashboard data.
+"""Time-limited, password-free viewer copies (Regional and Vanuatu).
 
-The viewer link (#view=<key>) opens data/regional-scholars.viewer.enc, a copy
-of the regional bundle encrypted with REGIONAL_VIEWER_KEY instead of the
-regional passcode. The real passcode never reaches a viewer's browser.
-data/regional-viewer-access.json holds only the expiry (no secrets).
+A viewer link (#view=<key>) opens a separate copy of a dashboard's data,
+encrypted with a viewer-only key instead of the real passcode, so the real
+passcode never reaches a viewer's browser. A small plaintext file holds only
+the expiry. Targets:
 
-create: start the link (writes the expiry file and the viewer copy).
-sync:   keep the viewer copy in step with the live bundle while the link is
-        active; re-encrypts only when the decrypted content differs, so
-        unchanged data never changes the file. Removes both files once the
-        expiry has passed.
-remove: end the link now (deletes both files).
+  regional  data/regional-scholars.json.enc (REGIONAL_PASSCODE)
+            -> data/regional-scholars.viewer.enc (REGIONAL_VIEWER_KEY)
+            The viewer copy may also swap A1 "View dashboard" links for
+            password-free country links from REGIONAL_VIEWER_COUNTRY_LINKS
+            (JSON {"WSM": "...", "VUT": "..."}); only viewers see them.
+  vanuatu   data/vanuatu-collaborator-bundle.json.enc
+            (VAVELAB_VANUATU_COLLABORATOR_PASSCODE)
+            -> data/vanuatu-collaborator-bundle.viewer.enc (VANUATU_VIEWER_KEY)
 
-Env: REGIONAL_PASSCODE, REGIONAL_VIEWER_KEY, VIEWER_EXPIRES (create only,
-ISO 8601 with timezone). Prints "created", "updated", "removed" or
-"unchanged". Secrets and plaintext are never printed or written to disk.
+Commands: <target|all> create|sync|remove
+  create  start the link (VIEWER_EXPIRES, ISO 8601 with timezone)
+  sync    while active, refresh the viewer copy only when its decrypted
+          content would change (unchanged data never rewrites the file);
+          once expired, delete it, which ends the link for everyone
+  remove  end the link now
+Prints "<target>: created|updated|removed|unchanged". No secrets or plaintext
+are printed or written to disk.
 """
 import json, os, sys
 from datetime import datetime, timezone
@@ -25,13 +32,31 @@ from encrypt_data import MAGIC, derive_key  # noqa: E402
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 DATA = Path(__file__).resolve().parent.parent / 'data'
-BUNDLE = DATA / 'regional-scholars.json.enc'
-VIEWER = DATA / 'regional-scholars.viewer.enc'
-META = DATA / 'regional-viewer-access.json'
+
+
+def regional_extra(plain):
+    links = json.loads(os.environ.get('REGIONAL_VIEWER_COUNTRY_LINKS') or '{}')
+    if not links:
+        return plain
+    d = json.loads(plain)
+    for c in d.get('countries', []):
+        if c.get('code') in links:
+            c['dashboard'], c['dashboardStatus'] = links[c['code']], 'live'
+    return json.dumps(d, ensure_ascii=False, separators=(',', ':')).encode()
+
+
+TARGETS = {
+    'regional': dict(src='regional-scholars.json.enc', pw='REGIONAL_PASSCODE',
+                     out='regional-scholars.viewer.enc', key='REGIONAL_VIEWER_KEY',
+                     meta='regional-viewer-access.json', extra=regional_extra),
+    'vanuatu': dict(src='vanuatu-collaborator-bundle.json.enc', pw='VAVELAB_VANUATU_COLLABORATOR_PASSCODE',
+                    out='vanuatu-collaborator-bundle.viewer.enc', key='VANUATU_VIEWER_KEY',
+                    meta='vanuatu-viewer-access.json', extra=None),
+}
 
 
 def opens(blob, pw):
-    if blob[:len(MAGIC)] != MAGIC:
+    if not pw or blob[:len(MAGIC)] != MAGIC:
         return None
     body = blob[len(MAGIC):]
     try:
@@ -49,56 +74,57 @@ def now_ms():
     return int(datetime.now(timezone.utc).timestamp() * 1000)
 
 
-def secrets():
-    pw, key = os.environ.get('REGIONAL_PASSCODE', ''), os.environ.get('REGIONAL_VIEWER_KEY', '')
-    if len(key) < 24:
-        sys.exit('REGIONAL_VIEWER_KEY secret is missing or too short')
-    plain = opens(BUNDLE.read_bytes(), pw)
-    if plain is None:
-        sys.exit('REGIONAL_PASSCODE does not open the live regional bundle')
-    return plain, key
+class Target:
+    def __init__(self, name):
+        t = TARGETS[name]
+        self.name, self.t = name, t
+        self.src, self.out, self.meta = DATA / t['src'], DATA / t['out'], DATA / t['meta']
 
+    def plain_and_key(self):
+        key = os.environ.get(self.t['key'], '')
+        if len(key) < 24:
+            sys.exit(f"{self.t['key']} secret is missing or too short")
+        plain = opens(self.src.read_bytes(), os.environ.get(self.t['pw'], ''))
+        if plain is None:
+            sys.exit(f"{self.t['pw']} does not open {self.t['src']}")
+        if self.t['extra']:
+            plain = self.t['extra'](plain)
+        return plain, key
 
-def remove():
-    gone = False
-    for f in (VIEWER, META):
-        if f.exists():
-            f.unlink(); gone = True
-    return 'removed' if gone else 'unchanged'
+    def write_viewer(self, plain, key):
+        if self.out.exists() and opens(self.out.read_bytes(), key) == plain:
+            return False
+        self.out.write_bytes(seal(plain, key))
+        return True
 
+    def remove(self):
+        gone = False
+        for f in (self.out, self.meta):
+            if f.exists():
+                f.unlink(); gone = True
+        return 'removed' if gone else 'unchanged'
 
-def write_viewer(plain, key):
-    if VIEWER.exists() and opens(VIEWER.read_bytes(), key) == plain:
-        return False
-    VIEWER.write_bytes(seal(plain, key))
-    return True
+    def create(self):
+        exp_dt = datetime.fromisoformat(os.environ.get('VIEWER_EXPIRES', ''))
+        if exp_dt.tzinfo is None or exp_dt.timestamp() * 1000 <= now_ms():
+            sys.exit('VIEWER_EXPIRES must be a future time with a timezone')
+        plain, key = self.plain_and_key()
+        meta_txt = json.dumps({'expires': exp_dt.isoformat(), 'expiresMs': int(exp_dt.timestamp() * 1000)}, indent=2) + '\n'
+        changed = self.write_viewer(plain, key)
+        if not self.meta.exists() or self.meta.read_text() != meta_txt:
+            self.meta.write_text(meta_txt); changed = True
+        return 'created' if changed else 'unchanged'
 
-
-def create():
-    exp_dt = datetime.fromisoformat(os.environ.get('VIEWER_EXPIRES', ''))
-    if exp_dt.tzinfo is None or exp_dt.timestamp() * 1000 <= now_ms():
-        sys.exit('VIEWER_EXPIRES must be a future time with a timezone')
-    plain, key = secrets()
-    meta = {'expires': exp_dt.isoformat(), 'expiresMs': int(exp_dt.timestamp() * 1000)}
-    meta_txt = json.dumps(meta, indent=2) + '\n'
-    changed = write_viewer(plain, key)
-    if not META.exists() or META.read_text() != meta_txt:
-        META.write_text(meta_txt); changed = True
-    return 'created' if changed else 'unchanged'
-
-
-def sync():
-    if not META.exists():
-        return remove()
-    if now_ms() >= json.loads(META.read_text()).get('expiresMs', 0):
-        return remove()
-    plain, key = secrets()
-    return 'updated' if write_viewer(plain, key) else 'unchanged'
+    def sync(self):
+        if not self.meta.exists() or now_ms() >= json.loads(self.meta.read_text()).get('expiresMs', 0):
+            return self.remove()
+        plain, key = self.plain_and_key()
+        return 'updated' if self.write_viewer(plain, key) else 'unchanged'
 
 
 if __name__ == '__main__':
-    cmd = sys.argv[1] if len(sys.argv) > 1 else ''
-    fn = {'create': create, 'sync': sync, 'remove': remove}.get(cmd)
-    if not fn:
-        sys.exit('usage: regional_viewer_access.py create|sync|remove')
-    print(fn())
+    if len(sys.argv) < 3 or sys.argv[2] not in ('create', 'sync', 'remove') or sys.argv[1] not in (*TARGETS, 'all'):
+        sys.exit('usage: regional_viewer_access.py regional|vanuatu|all create|sync|remove')
+    names = list(TARGETS) if sys.argv[1] == 'all' else [sys.argv[1]]
+    for n in names:
+        print(f'{n}: ' + getattr(Target(n), sys.argv[2])())

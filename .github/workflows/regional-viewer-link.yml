@@ -1,6 +1,6 @@
 name: Regional viewer link
 
-# Password-free, time-limited viewer link for the Regional dashboard.
+# Password-free, time-limited viewer links for the Regional and Vanuatu dashboards.
 # The link opens data/regional-scholars.viewer.enc, a copy of the regional
 # bundle encrypted with the REGIONAL_VIEWER_KEY secret, so the real regional
 # passcode never reaches a viewer's browser (scripts/regional_viewer_access.py).
@@ -16,10 +16,16 @@ on:
     workflows:
       - Rebuild regional dashboard
       - Merge regional dashboard data patch
+      - Refresh Vanuatu Master File snapshot
     types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
+      target:
+        description: 'Which dashboard'
+        type: choice
+        options: [regional, vanuatu, all]
+        default: all
       action:
         description: 'create or remove'
         type: choice
@@ -60,22 +66,26 @@ jobs:
         env:
           REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
           REGIONAL_VIEWER_KEY: ${{ secrets.REGIONAL_VIEWER_KEY }}
+          REGIONAL_VIEWER_COUNTRY_LINKS: ${{ secrets.REGIONAL_VIEWER_COUNTRY_LINKS }}
+          VAVELAB_VANUATU_COLLABORATOR_PASSCODE: ${{ secrets.VAVELAB_VANUATU_COLLABORATOR_PASSCODE }}
+          VANUATU_VIEWER_KEY: ${{ secrets.VANUATU_VIEWER_KEY }}
           VIEWER_EXPIRES: ${{ github.event.inputs.expires }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then cmd="${{ github.event.inputs.action }}"; else cmd=sync; fi
-          out=$(python3 scripts/regional_viewer_access.py "$cmd")
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then tgt="${{ github.event.inputs.target }}"; cmd="${{ github.event.inputs.action }}"; else tgt=all; cmd=sync; fi
+          out=$(python3 scripts/regional_viewer_access.py "$tgt" "$cmd")
           echo "$out"
-          echo "result=$out" >> "$GITHUB_OUTPUT"
+          if echo "$out" | grep -qE ': (created|updated|removed)$'; then echo "result=changed" >> "$GITHUB_OUTPUT"; fi
       - name: Commit and deploy
-        if: steps.run.outputs.result == 'created' || steps.run.outputs.result == 'updated' || steps.run.outputs.result == 'removed'
+        if: steps.run.outputs.result == 'changed'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A -- data/regional-scholars.viewer.enc data/regional-viewer-access.json
-          git commit -m "Regional viewer link: ${{ steps.run.outputs.result }}"
+          git add -A -- data/
+          git diff --cached --name-only | grep -vE "^data/[a-z-]+(\.viewer\.enc|-viewer-access\.json)$" && { echo "::error::unexpected staged files"; exit 1; } || true
+          git commit -m "Viewer links: refresh viewer copies"
           for i in 1 2 3 4; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done
           gh workflow run deploy-pages-validated.yml --ref main

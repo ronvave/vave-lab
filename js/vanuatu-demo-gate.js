@@ -81,15 +81,36 @@ function notice(){
  n.innerHTML='<strong>Vanuatu Scholar Dashboard — pre-launch demo</strong><br>This dashboard has not yet launched. These fictional example records show the layout, not the Vanuatu database. Have an owner or collaborator password? <a href="vanuatu-research-database-master.html">Enter your password to view the dashboard</a>.';
  document.querySelector('main')?.prepend(n);
 }
+// Time-limited viewer link (#view=<key>): opens a separate viewer copy of the
+// approved viewing data, encrypted with a viewer-only key, so no Vanuatu
+// password reaches the browser. GitHub deletes the copy when the link expires.
+// Returns true when unlocked, a message when the link no longer works, or ''.
+async function viewerLink(){
+ const m=/(?:^|[#&])view=([A-Za-z0-9_-]{24,})/.exec(location.hash);if(!m)return '';
+ try{
+  const meta=await fetch('data/vanuatu-viewer-access.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null);
+  if(!meta)return 'This viewer link has ended. Please ask for a new link.';
+  if(Date.now()>=meta.expiresMs)return 'This viewer link has expired. Please ask for a new link.';
+  const r=await fetch('data/vanuatu-collaborator-bundle.viewer.enc?t='+Date.now(),{cache:'no-store'});
+  if(!r.ok)return 'This viewer link has ended. Please ask for a new link.';
+  const a=new Uint8Array(await r.arrayBuffer());if(new TextDecoder().decode(a.slice(0,4))!=='IVAV')throw Error('format');
+  const seed=await crypto.subtle.importKey('raw',new TextEncoder().encode(m[1]),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:a.slice(4,20),iterations:200000,hash:'SHA-256'},seed,{name:'AES-GCM',length:256},false,['decrypt']);
+  B.use(JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:a.slice(20,32)},key,a.slice(32)))));
+  return true;
+ }catch{return 'This viewer link is not valid.';}
+}
 async function boot(cb){
  if(started)return;started=true;
  const main=document.querySelector('main');if(!main)return;
  const children=[...main.children];children.forEach(x=>x.hidden=true);
  const finish=()=>{main.querySelector('.demo-gate-shell')?.remove();children.forEach(x=>x.hidden=false);notice();controls();cb();};
  if(forcedPreview){B.preview();finish();return;}
+ const viewer=await viewerLink();
+ if(viewer===true){finish();return;}
  if(B.current()||await restore()){finish();return;}
  injectShellStyles();
- const wrap=document.createElement('div');wrap.innerHTML=buildShellHtml('');const gate=wrap.firstElementChild;
+ const wrap=document.createElement('div');wrap.innerHTML=buildShellHtml(viewer||'');const gate=wrap.firstElementChild;
 
  main.append(gate);gate.querySelector('input').focus();
  gate.querySelector('form').onsubmit=async e=>{e.preventDefault();const input=gate.querySelector('input[type=password]'),button=gate.querySelector('button[type=submit]');button.disabled=true;try{await B.load(input.value);remember(input.value);input.value='';finish();}catch(err){gate.querySelector('[data-collaborator-error]').textContent=err.message;button.disabled=false;}};

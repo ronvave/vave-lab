@@ -39,7 +39,7 @@ COUNTRIES = [
     ('FJI', 'Fiji', '1nJvMWLS8jnCOKtRoqdDpEW3s3j9TSAclXBO1txVFxdg', 'itaukei-research-database-master.html', 'live'),
     ('TON', 'Tonga', '1lh6wOFcg2GiFe2YylgxM5cvLOdumdbCrHDLQk87rjRI', 'tongan-research-database-master.html', 'live'),
     ('SLB', 'Solomon Islands', '1um6pHKriEhbtvmkm7e8E1j0_Zt9A-oYpY88fuPoAmFY', 'solomon-islands-research-database-master.html', 'live'),
-    ('WSM', 'Samoa', '1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ', None, 'development'),
+    ('WSM', 'Samoa', '1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ', 'samoa-research-database-master.html', 'live'),
     ('VUT', 'Vanuatu', '1jfS6Yqyy559kLdoeKW4F4t8RhyBooXpCiwOMukxpPW0', 'vanuatu-research-database-master.html', 'live'),
     ('TUV', 'Tuvalu', '1jvRz1HHK90_6Uk3junJHPS03NqUuGfHO1JUQSpjz2wA', None, 'none'),
     ('KIR', 'Kiribati', '15gmd0Q7NostzeSAZg27fpIoGUDYCE64kGSbYoh-RjqE', None, 'none'),
