@@ -582,7 +582,7 @@
         return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + (t.key === 'all' ? '' : ico(t.key)) + esc(t.label) +
           '<span class="nw__n">' + n + '</span></button>' +
           (SUBS[t.key] && n ? '<label class="pn-sub" data-pn-sub-for="' + t.key + '" hidden>' + ico(t.key) + '<select data-pn-sub aria-label="' + esc(SUBS[t.key].aria) + '"></select></label>' : '');
-      }).join('') + '</div>' + share + '</div>' +
+      }).join('') + '</div>' + share + '<p class="nw__hint"><span>Select a category to filter the stories. Some categories, such as New theses, become a dropdown when selected so you can filter further, for example by Master\'s or PhD.</span></p>' + '</div>' +
       '<div class="nw__grid"><div class="nw__main"><div class="pn-card"><div class="nw__feat" aria-live="polite"></div>' +
       '<div class="nw__under"><div class="nw__ctrls">' +
       '<button type="button" class="nw__btn" data-nw-prev aria-label="Previous story">&lsaquo;</button>' +

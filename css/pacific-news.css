@@ -248,3 +248,16 @@ button.pn-hm__cell:hover { outline: 2px solid #0d2b55; outline-offset: -2px; }
 
 /* Keep A2 author-card no-photo tiles on the palm mat (overrides the teal rule above). */
 .pn .pn-ac__ph { background: linear-gradient(160deg, rgba(70,40,8,.08) 0%, rgba(62,34,6,.40) 55%, rgba(45,24,4,.68) 100%), #b07a30 url("../img/regional/a2-palm-mat.webp") left top / 520px auto repeat; }
+
+/* 2026-11-05: larger plumeria-fern cluster cropped off the lower-left corner of no-photo tiles,
+   including the per-scholar cards on multi-scholar stories. */
+.pn .nw__img:not(.is-split), .pn .pn-ac__ph:not(:has(img)) { overflow: hidden; }
+.pn .pn-ac__ph:not(:has(img)) {
+  background: linear-gradient(160deg, rgba(70,40,8,.08) 0%, rgba(62,34,6,.40) 55%, rgba(45,24,4,.68) 100%), #b07a30 url("../img/regional/a2-palm-mat.webp") left top / 520px auto repeat; }
+.pn .nw__img:not(.is-split):not(:has(img))::after, .pn .nw__img.is-split .nw-face:not(:has(img))::after, .pn .pn-ac__ph:not(:has(img))::after {
+  content: ""; position: absolute; left: -9%; bottom: -12%; width: 64%; max-width: none; aspect-ratio: 520 / 607; pointer-events: none;
+  background: url("../img/fiji/a3-plumeria-fern.webp") left bottom / contain no-repeat; }
+.pn .pn-ac__ph:not(:has(img)) .pn-ac__ini { position: relative; z-index: 1; }
+.pn .nw__img:not(.is-split) .nw__img__ini { z-index: 1; }
+/* Note under the category buttons */
+
