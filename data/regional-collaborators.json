@@ -44,6 +44,8 @@
     { "code": "COK", "people": [] },
     { "code": "MHL", "people": [] },
     { "code": "FSM", "people": [] },
-    { "code": "HAW", "people": [] }
+    { "code": "HAW", "people": [
+      { "name": "Kamanamaikalani Beamer", "title": "Prof", "role": "Professor and Dean, Hawaiʻinuiākea School of Hawaiian Knowledge", "inst": "UHM", "key": true, "photo": "img/regional/collab/kamanamaikalani-beamer.webp" }
+    ] }
   ]
 }
