@@ -8429,7 +8429,7 @@
   const COUNTRY_ISO = {
     'Fiji': 'fj', 'Australia': 'au', 'New Zealand': 'nz', 'Aotearoa': 'nz',
     'United Kingdom': 'gb', 'UK': 'gb', 'Great Britain': 'gb', 'England': 'gb', 'Scotland': 'gb', 'Wales': 'gb',
-    'USA': 'us', 'United States': 'us', 'United States of America': 'us', 'America': 'us',
+    'USA': 'us', 'United States': 'us', 'Hawaii': 'us', 'Hawaiʻi': 'us', "Hawai'i": 'us', 'United States of America': 'us', 'America': 'us',
     'Guam (USA territory)': 'gu', 'Guam': 'gu',
     'United Arab Emirates': 'ae', 'UAE': 'ae',
     'Papua New Guinea': 'pg', 'PNG': 'pg',
@@ -8461,6 +8461,11 @@
     if (!country) return '';
     const iso = COUNTRY_ISO[country];
     if (!iso) return '';
+    // Native Hawaiian scholars working in the United States (including
+    // Hawaiʻi) show the Hawaiʻi state flag instead of the US flag.
+    if (iso === 'us') {
+      return `<img class="db-scholar-card__flag" src="img/regional/flags-rect/haw.webp" alt="Hawaiʻi flag" title="Hawaiʻi" loading="lazy" width="49" height="34" style="object-position:left center" />`;
+    }
     const alt = escapeAttr(country);
     return `<img class="db-scholar-card__flag" src="https://flagcdn.com/${iso}.svg" alt="${alt} flag" title="${alt}" loading="lazy" width="49" height="34" />`;
   }
