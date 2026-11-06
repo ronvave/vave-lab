@@ -671,6 +671,15 @@ function buildOption(data){
           }
         });
       });
+      // Keep % pills in the small head bands from overlapping: within each
+      // figure, push any pill that sits too close above its neighbour upward.
+      const MIN_PILL_GAP = 4.6;  // yAxis units (a little more than one pill height)
+      genders.forEach((g,gi)=>{
+        const mine = pts.filter(q=>q.value[0]===gi).sort((a,b)=>a.value[1]-b.value[1]);
+        for(let k=1;k<mine.length;k++){
+          if(mine[k].value[1]-mine[k-1].value[1] < MIN_PILL_GAP) mine[k].value[1] = mine[k-1].value[1]+MIN_PILL_GAP;
+        }
+      });
       return pts;
     })(),
     label: {

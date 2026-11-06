@@ -695,8 +695,15 @@ def compute_body_composition_master(
     scholars: list[dict],
     publications: list[dict],
     authorship: list[dict],
+    grad_degrees: list[dict] | None = None,
 ) -> dict:
     """Return {Woman, Man} payload for data/body-composition-master.json.
+
+    Hawaiʻi: the Master records Master's and PhD theses on the Graduate
+    Degrees sheet, not as Publications rows, so the two thesis bands
+    (masters, phd) count each completed Master's / PhD degree of a counted
+    scholar from Graduate Degrees. Thesis rows in Publications are ignored
+    here so the same thesis is never counted twice.
 
     Reads the same Master snapshot the rest of the dashboard uses, so C1
     stays in step with the Dashboard sheet on every 2h refresh instead of
@@ -743,6 +750,8 @@ def compute_body_composition_master(
         js_key = master_to_js.get(ptype)
         if not js_key:
             continue
+        if grad_degrees is not None and js_key in ("masters", "phd"):
+            continue  # theses come from Graduate Degrees (below)
         pid = p.get("Publication ID / BibTeX Key")
         sids = pub_to_sids.get(pid, set())
         if not sids:
@@ -752,6 +761,28 @@ def compute_body_composition_master(
             payload["Man"][js_key] += 1
         if "Wahine" in linked_genders:
             payload["Woman"][js_key] += 1
+
+    # Completed Master's / PhD degrees from Graduate Degrees, one per
+    # degree record, credited to the scholar's gender.
+    if grad_degrees is not None:
+        for d in grad_degrees:
+            sid = d.get("Scholar ID")
+            if sid not in scholar_ids:
+                continue
+            if "complet" not in str(d.get("Completion Status") or "").lower():
+                continue
+            stage = str(d.get("Degree Stage") or "").lower()
+            if "phd" in stage or "doctor" in stage:
+                js_key = "phd"
+            elif "master" in stage:
+                js_key = "masters"
+            else:
+                continue
+            g = gender_by_sid.get(sid, "")
+            if g == "Kāne":
+                payload["Man"][js_key] += 1
+            elif g == "Wahine":
+                payload["Woman"][js_key] += 1
 
     # Provenance so downstream readers can tell fresh vs stale at a glance.
     payload["_meta"] = {
@@ -1030,7 +1061,10 @@ def run(
     # with the Master Dashboard instead of drifting from a stale one-off
     # snapshot.
     log("Building Panel C1 body-composition payload...")
-    body_comp = compute_body_composition_master(counted_scholars, publications, counted_authorship)
+    body_comp = compute_body_composition_master(
+        counted_scholars, publications, counted_authorship,
+        [g for g in grad_degrees if g.get("Scholar ID") in counted_ids],
+    )
     _write_json(out_dir / "hawaii-body-composition-master.json", body_comp)
     log(
         f"  → C1 payload: Woman scholars={body_comp['Woman']['scholars']}, "
