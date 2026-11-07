@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=363aad48" />
   <link rel="stylesheet" href="css/pacific-scholars-pubs-collab.css?v=d2a0bfc8" />
 <link rel="stylesheet" href="css/pacific-scholars-highlights.css?v=e4f6efbd" />
+<link rel="stylesheet" href="css/pacific-scholars-pubtrend.css">
 <link rel="stylesheet" href="css/scholar-card-tabs.css?v=fbfbfa72">
 <script src="js/link-analytics.js?v=5897112c"></script>
 <!-- Google Analytics -->
@@ -355,6 +356,82 @@
         </div>
       </section>
 
+      <!-- B3 · PUBLICATION OUTPUT OVER TIME -->
+      <section data-panel="B3" data-panel-title="Publication Output Over Time" class="ps-panel ps-col-full ps-po" id="ps-po-panel" aria-labelledby="ps-po-title" hidden>
+        <span class="ps-num" aria-hidden="true">B3</span>
+        <div class="ps-head ps-po-head">
+          <div>
+            <h2 class="ps-h2" id="ps-po-title">Publication Output Over Time</h2>
+            <p class="ps-sub">Publications linked to Indigenous scholars in each country's Master file, counted by year. Choose the author role, scholars, gender, publication types and countries to compare.</p>
+          </div>
+          <div class="ps-seg" role="group" aria-label="B3 view">
+            <button type="button" data-po-view="chart" aria-pressed="true">Line chart</button>
+            <button type="button" data-po-view="list" aria-pressed="false">List</button>
+          </div>
+          <button type="button" class="ps-iconbtn ps-po-fullbtn" id="ps-po-full" aria-label="Full screen" title="Full screen">⛶ Full screen</button>
+        </div>
+        <div class="ps-po-row">
+          <span class="ps-po-lbl">Author role</span>
+          <div class="ps-seg" role="group" aria-label="Author role">
+            <button type="button" data-po-role="lead" aria-pressed="false" title="The first-listed author is an Indigenous scholar on the country roster">Indigenous lead author</button>
+            <button type="button" data-po-role="coauth" aria-pressed="false" title="An Indigenous scholar is an author, but not the first-listed author">Indigenous coauthor</button>
+            <button type="button" data-po-role="either" aria-pressed="true" title="An Indigenous scholar is the lead author or a coauthor">Either role</button>
+            <button type="button" data-po-role="all" aria-pressed="false" title="Every eligible publication in the country's Master file">All authors</button>
+          </div>
+          <span class="ps-po-lbl ps-po-gap">Y-axis</span>
+          <div class="ps-seg ps-seg--sm" role="group" aria-label="Y-axis scale">
+            <button type="button" data-po-scale="lin" aria-pressed="true">Count</button>
+            <button type="button" data-po-scale="log" aria-pressed="false" title="Spreads out the smaller countries">Log scale</button>
+          </div>
+        </div>
+        <div class="ps-po-row">
+          <span class="ps-po-lbl">Scholars</span>
+          <div class="ps-seg ps-seg--sm" role="group" aria-label="Scholars" data-po-who>
+            <button type="button" data-po-deg="all" aria-pressed="true" title="All roster scholars, with or without a recorded graduate degree">All scholars</button>
+            <button type="button" data-po-deg="mp" aria-pressed="false" title="Scholars with a completed Master's or PhD">Master's and PhD</button>
+            <button type="button" data-po-deg="m" aria-pressed="false" title="Scholars whose highest completed degree is a Master's">Master's only</button>
+            <button type="button" data-po-deg="p" aria-pressed="false" title="Scholars with a completed PhD or doctorate">PhD only</button>
+          </div>
+          <span class="ps-po-lbl ps-po-gap">Gender</span>
+          <div class="ps-seg ps-seg--sm" role="group" aria-label="Gender" data-po-who>
+            <button type="button" data-po-gen="all" aria-pressed="true">All</button>
+            <button type="button" data-po-gen="m" aria-pressed="false">Male</button>
+            <button type="button" data-po-gen="f" aria-pressed="false">Female</button>
+            <button type="button" data-po-gen="u" aria-pressed="false" title="Gender not recorded in the Master file">Not recorded</button>
+          </div>
+          <span class="ps-po-whonote" id="ps-po-whonote" hidden>Scholar and gender filters apply to Indigenous author roles.</span>
+        </div>
+        <div class="ps-po-row" id="ps-po-types">
+          <span class="ps-po-lbl">Types</span>
+        </div>
+        <div class="ps-po-row" id="ps-po-countries">
+          <span class="ps-po-lbl">Countries</span>
+        </div>
+        <div class="ps-po-row" id="ps-po-zoom">
+          <span class="ps-po-lbl">Years</span>
+          <div class="ps-seg ps-seg--sm" role="group" aria-label="Year range">
+            <button type="button" data-po-preset="all" aria-pressed="true">All years</button>
+            <button type="button" data-po-preset="1980" aria-pressed="false">Since 1980</button>
+            <button type="button" data-po-preset="2000" aria-pressed="false">Since 2000</button>
+            <button type="button" data-po-preset="10" aria-pressed="false">Last 10 years</button>
+          </div>
+          <label class="ps-po-yr">From <input type="number" id="ps-po-from" inputmode="numeric" aria-label="From year"></label>
+          <label class="ps-po-yr">To <input type="number" id="ps-po-to" inputmode="numeric" aria-label="To year"></label>
+          <div class="ps-po-zbtns" role="group" aria-label="Zoom">
+            <button type="button" class="ps-iconbtn" id="ps-po-zin" aria-label="Zoom in" title="Zoom in">+</button>
+            <button type="button" class="ps-iconbtn" id="ps-po-zout" aria-label="Zoom out" title="Zoom out">−</button>
+          </div>
+          <button type="button" class="ps-po-link" id="ps-po-zreset">Reset zoom</button>
+          <span class="ps-po-zhint">Or drag across the chart to zoom into a period; double-click to reset.</span>
+        </div>
+        <div class="ps-po-chart" id="ps-po-chart" data-po-pane="chart">
+          <svg id="ps-po-svg" role="img" aria-label="Publications per year by country" tabindex="0"></svg>
+          <div class="ps-po-tip" id="ps-po-tip" aria-hidden="true"></div>
+        </div>
+        <div class="ps-po-list" id="ps-po-list" data-po-pane="list" hidden></div>
+        <p class="ps-note" id="ps-po-note"></p>
+      </section>
+
       <!-- C1 · WHERE OUR SCHOLARS STUDY AND WORK (was C1 + B2) -->
       <section data-panel="C1" data-panel-title="Where Our Scholars Study and Work" class="ps-panel ps-panel--tapa ps-col-dest" aria-labelledby="ps-dest-title">
         <span class="ps-num" aria-hidden="true">C1</span>
@@ -614,6 +691,7 @@
   <script src="js/vendor/qrcode-generator.js?v=18ae399f" defer></script>
   <script src="js/news-event.js?v=bffe319a" defer></script>
   <script src="js/pacific-news.js?v=05b594fd" data-submit-fji="https://script.google.com/macros/s/AKfycbxL44nM_4zHrZKuvLYWgO1B5rRQiqeSwg9s5iA7sxobe7uCl02en4ZQSx24oU3r5cNv/exec" data-submit-ton="https://script.google.com/macros/s/AKfycbwm6ZOEFya_NOPmMswjxjpqLsoXaYuoH5tMvc2hP29YakWf7dV9728y0iEHmx3WsKGSow/exec" data-submit-slb="https://script.google.com/macros/s/AKfycbw4iymIpI7y7ctyn3Iaufk--QIdwBlFToWwOG1CuI_EsD9YOMkNtCe7N_n_OEWhi7PyAg/exec" defer></script>
+  <script src="js/pacific-scholars-pubtrend.js" defer></script>
   <script src="js/pacific-scholars-highlights.js?v=a04d9753" defer></script>
   <script src="js/pacific-scholars.js?v=090ae0bb" defer></script>
   <script src="js/pacific-scholars-panel-menu.js?v=6db67ffd" defer></script>

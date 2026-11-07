@@ -321,7 +321,7 @@ def build_country(code, name, dump):
         doi = fold(r.get('DOI')).replace('https doi org ', '').replace('doi ', '')
         y = year_of(r.get('Year'))
         key = ('doi:' + doi) if doi else ('t:' + fold(r.get('Title'))[:120] + '|' + str(y or ''))
-        pubs[pid] = dict(year=y, key=key)
+        pubs[pid] = dict(year=y, key=key, label=label)
     A = table(dump, 'Authorship', 'Authorship ID')
     linked = set()
     publishing = set()
@@ -333,6 +333,42 @@ def build_country(code, name, dump):
             linked.add(pid)
             publishing.add(norm(r.get('Scholar ID')))
     pg = Counter(gender(r.get('Gender')) for r in scholars if norm(r['Scholar ID']) in publishing)
+
+    # B3 Publication Output Over Time: anonymous per-publication cube.
+    # Each row is [year, type, mask, n]: n publications sharing that year,
+    # type and mask. The mask has two bits per scholar category (degree held
+    # x gender): bit 2k = a linked scholar of category k is an author, bit
+    # 2k+1 = that scholar is the lead (Author Position 1 / Is First Author?).
+    # Degree: 0 = holds a PhD/doctorate, 1 = Master's but no PhD, 2 = none
+    # recorded. Gender: 0 female, 1 male, 2 not recorded. Mask 0 = a Master
+    # publication with no linked roster scholar (used by "All authors").
+    # Counts only: no titles, IDs, names or keys.
+    S_by = {norm(r['Scholar ID']): r for r in scholars}
+    lv_by = defaultdict(set)
+    for lv, r in degs:
+        lv_by[norm(r['Scholar ID'])].add('P' if lv in ('P', 'PD') else 'M')
+    GI = {'female': 0, 'male': 1, 'unknown': 2}
+    masks = Counter()
+    for r in A:
+        if fold(r.get('Verification Status')) == 'excluded':
+            continue
+        pid = norm(r.get('Publication ID / BibTeX Key') or r.get('Publication ID'))
+        sid = norm(r.get('Scholar ID'))
+        if sid not in ids or pid not in pubs:
+            continue
+        lvs = lv_by.get(sid, set())
+        k = (0 if 'P' in lvs else 1 if 'M' in lvs else 2) * 3 + GI[gender(S_by[sid].get('Gender'))]
+        try:
+            pos = int(float(norm(r.get('Author Position')) or 0))
+        except ValueError:
+            pos = 0
+        lead = pos == 1 or fold(r.get('Is First Author?')) in ('true', 'yes', 'y', '1')
+        masks[pid] |= (1 << (2 * k)) | ((1 << (2 * k + 1)) if lead else 0)
+    cube = Counter()
+    for pid, v in pubs.items():
+        if v['year']:
+            cube[(v['year'], v['label'], masks.get(pid, 0))] += 1
+    pub_cube = [[y, t, mk, n] for (y, t, mk), n in sorted(cube.items())]
 
     # Search index — public-facing, minimal fields only. No gender, geography,
     # genealogy, notes, evidence, share tokens or contact details.
@@ -366,6 +402,7 @@ def build_country(code, name, dump):
         pubGender=dict(female=pg['female'], male=pg['male'], unknown=pg['unknown']),
         pubsIndexed=len(pubs), pubsIndigenous=len(linked), pubTypes=dict(ptype_counts),
         pubYears={str(k): v for k, v in sorted(years.items())},
+        pubCube=pub_cube,
         destinations=[dict(r=k[0], l=k[1], dec=k[2], n=v) for k, v in sorted(dest.items())],
         destinationCountries={k: dict(v) for k, v in dest_unis.items()},
         disciplines=({lv: dict(c) for lv, c in disc.items()} if disc else None),

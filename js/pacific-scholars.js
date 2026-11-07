@@ -152,6 +152,7 @@
     renderKpis();
     renderKpisB();
     if (window.PSHighlights) { try { window.PSHighlights.init(D); } catch (e) { console.error(e); } }
+    if (window.PSPubTrend) { try { window.PSPubTrend.init(D); } catch (e) { console.error(e); } }
     setupMetric();
     setupMap();
     setupBars();
