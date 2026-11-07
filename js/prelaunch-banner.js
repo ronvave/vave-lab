@@ -42,7 +42,7 @@
   }
 
   function attach() {
-    var nav = document.querySelector('.db-panel-menu');
+    var nav = document.querySelector('.db-panel-menu, .ps-pmenu');
     if (!nav) return false;
     if (nav.querySelector('.db-prelaunch')) return true;
     var bar = build();
