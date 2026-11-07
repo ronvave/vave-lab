@@ -8,10 +8,10 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmt = n => Math.round(n || 0).toLocaleString();
 
-  const LC = ['FJI', 'HAW', 'WSM', 'SLB', 'TON', 'VUT', 'COK', 'FSM', 'KIR', 'MHL', 'PLW', 'TUV', 'none'];
-  const LC_NAME = { FJI: 'Fiji', HAW: 'Hawaiʻi', WSM: 'Samoa', SLB: 'Solomon Islands', TON: 'Tonga', VUT: 'Vanuatu', COK: 'Cook Islands', FSM: 'Federated States of Micronesia', KIR: 'Kiribati', MHL: 'Marshall Islands', PLW: 'Palau', TUV: 'Tuvalu', none: 'No link (your passcode)' };
-  const LC_SHORT = { FSM: 'FSM', SLB: 'Solomon Is.', COK: 'Cook Is.', MHL: 'Marshall Is.', none: 'No link' };
-  const COLORS = { FJI: '#2f86d6', TON: '#e0464f', SLB: '#14a99a', VUT: '#e9a40f', WSM: '#3a63d8', FSM: '#7b4fd8', KIR: '#13a9c4', MHL: '#d93a7a', TUV: '#22a663', COK: '#a463e6', PLW: '#ef7d1a', HAW: '#9c3b1b', none: '#8a8f96' };
+  const LC = ['FJI', 'HAW', 'WSM', 'SLB', 'TON', 'VUT', 'COK', 'FSM', 'KIR', 'MHL', 'PLW', 'TUV', 'UHM', 'none'];
+  const LC_NAME = { FJI: 'Fiji', HAW: 'Hawaiʻi', WSM: 'Samoa', SLB: 'Solomon Islands', TON: 'Tonga', VUT: 'Vanuatu', COK: 'Cook Islands', FSM: 'Federated States of Micronesia', KIR: 'Kiribati', MHL: 'Marshall Islands', PLW: 'Palau', TUV: 'Tuvalu', UHM: 'UH Mānoa leadership', none: 'No link (your passcode)' };
+  const LC_SHORT = { FSM: 'FSM', SLB: 'Solomon Is.', COK: 'Cook Is.', MHL: 'Marshall Is.', UHM: 'UH Mānoa', none: 'No link' };
+  const COLORS = { FJI: '#2f86d6', TON: '#e0464f', SLB: '#14a99a', VUT: '#e9a40f', WSM: '#3a63d8', FSM: '#7b4fd8', KIR: '#13a9c4', MHL: '#d93a7a', TUV: '#22a663', COK: '#a463e6', PLW: '#ef7d1a', HAW: '#9c3b1b', UHM: '#024731', none: '#8a8f96' };
   const LT = ['c', 'r', 'a1', 'none'];
   const LT_NAME = { c: 'Country link', r: 'Regional link', a1: 'From Regional A1', none: 'Passcode or direct' };
   const DASH = ['REG', 'FJI', 'HAW', 'WSM', 'SLB', 'TON', 'VUT'];
@@ -66,7 +66,7 @@
     const d = new Date(+v.slice(0, 4), +v.slice(4, 6) - 1, +v.slice(6, 8), +v.slice(8, 10), +v.slice(10, 12));
     return d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
   }
-  const flag = code => code !== 'none' ? `<img src="img/regional/flags-rect/${code.toLowerCase()}.webp" alt="" loading="lazy" />` : '<span class="la-dot" style="background:#8a8f96"></span>';
+  const flag = code => code === 'UHM' ? '<span class="la-dot" style="background:#024731"></span>' : code !== 'none' ? `<img src="img/regional/flags-rect/${code.toLowerCase()}.webp" alt="" loading="lazy" />` : '<span class="la-dot" style="background:#8a8f96"></span>';
   const geoName = c => (c && c !== '(not set)') ? c : 'Unknown location';
   const cityName = (c, k) => (c && c !== '(not set)' ? c + ', ' : 'Unknown city, ') + geoName(k);
   function pass(r, geoIdx, dateLen) {
@@ -221,7 +221,7 @@
     const z = v => v ? fmt(v) : '<span class="la-zero">0</span>';
     const panelLabel = key => { if (!key) return '<span class="la-zero">—</span>'; const [dsh, id] = key.split('|'); const t = ((D.titles || {})[dsh] || {})[id] || ''; return `<span title="${esc(DASH_NAME[dsh] + ' · ' + id + (t ? ' ' + t : ''))}">${esc(DASH_NAME[dsh])} · <b>${esc(id)}</b></span>`; };
     $('#la-score').innerHTML = `<thead><tr>${cols.map(([key, l, cls]) => `<th scope="col" tabindex="0" data-sort="${key}" class="${cls || ''}${k === key ? ' is-sorted' + (asc ? ' is-asc' : '') : ''}">${l}</th>`).join('')}</tr></thead><tbody>${list.map(o => `<tr>
-      <td><span class="la-flag">${flag(o.code)}${esc(o.name)}</span></td><td>${o.code === 'none' || !DASH_NAME[o.code] ? '<span class="la-zero">—</span>' : z(o.c)}</td><td>${o.code === 'none' ? '<span class="la-zero">—</span>' : z(o.r)}</td><td>${o.code === 'none' ? '<span class="la-zero">—</span>' : z(o.a1)}</td>
+      <td><span class="la-flag">${flag(o.code)}${esc(o.name)}</span></td><td>${o.code === 'none' || (!DASH_NAME[o.code] && o.code !== 'UHM') ? '<span class="la-zero">—</span>' : z(o.c)}</td><td>${o.code === 'none' ? '<span class="la-zero">—</span>' : z(o.r)}</td><td>${o.code === 'none' ? '<span class="la-zero">—</span>' : z(o.a1)}</td>
       <td><b>${z(o.total)}</b><span class="la-bar" style="width:${Math.round(60 * o.total / max)}px"></span></td><td>${o.secs ? dur(o.secs) : '<span class="la-zero">—</span>'}</td><td>${o.total ? dur(o.avg) : '<span class="la-zero">—</span>'}</td><td>${z(o.panels)}</td>
       <td class="la-l">${panelLabel(o.topK)}</td><td>${o.last ? esc(dhmShort(o.last)) : '<span class="la-zero">Not yet</span>'}</td></tr>`).join('')}</tbody>`;
     $('#la-score').querySelectorAll('th[data-sort]').forEach(th => {
