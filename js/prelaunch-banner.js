@@ -17,6 +17,8 @@
     '.db-prelaunch__sep{flex:0 0 auto;width:1px;align-self:stretch;background:rgba(0,0,0,.45)}' +
     '.db-prelaunch__title{flex:0 0 auto;font-weight:700;font-size:15px;letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}' +
     '.db-prelaunch__msg{min-width:0}' +
+    '.db-prelaunch__mail{color:#0b3f8a;font-weight:700;text-decoration:underline}' +
+    '.db-prelaunch__mail:hover{color:#062a5e}' +
     '[data-theme="dark"] .db-prelaunch{background:#fde58a;color:#111}' +
     '.db-prelaunch--top{position:fixed;top:0;left:0;right:0;z-index:2147483000;margin:0;box-sizing:border-box}' +
     'html.has-prelaunch body{box-sizing:border-box;padding-top:var(--prelaunch-h,46px)!important}' +
@@ -37,7 +39,9 @@
       '<strong class="db-prelaunch__title">Dashboard not yet launched</strong>' +
       '<span class="db-prelaunch__sep" aria-hidden="true"></span>' +
       '<span class="db-prelaunch__msg">This dashboard is in pre-launch preview for collaborators only. ' +
-      'Please do not share the weblink or screenshots publicly until it is officially launched.</span>';
+      'Please do not share the weblink or screenshots publicly until it is officially launched. ' +
+      'For more information, contact ' +
+      '<a class="db-prelaunch__mail" href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>.</span>';
     return bar;
   }
 
