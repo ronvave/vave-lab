@@ -15,6 +15,15 @@ the expiry. Targets:
             (VAVELAB_VANUATU_COLLABORATOR_PASSCODE)
             -> data/vanuatu-collaborator-bundle.viewer.enc (VANUATU_VIEWER_KEY)
 
+  countries data/regional-scholars.json.enc (REGIONAL_PASSCODE)
+            -> data/regional-scholars-<code>.viewer.enc, one per country in
+            REGIONAL_COUNTRY_VIEWERS (JSON {"HAW": {"key": "...", "links":
+            {"FJI": "...", "HAW": "..."}}}). Each copy opens with its own key
+            (#view=<key>&lc=<CODE>); Panel A1 links only the dashboards in
+            "links" and marks every other live dashboard "Not included in this
+            link". Removing a country from the secret deletes its copy on the
+            next sync, which ends that country's link only.
+
 Commands: <target|all> create|sync|remove
   create  start the link (VIEWER_EXPIRES, ISO 8601 with timezone)
   sync    while active, refresh the viewer copy only when its decrypted
@@ -45,6 +54,20 @@ def regional_extra(plain):
     return json.dumps(d, ensure_ascii=False, separators=(',', ':')).encode()
 
 
+LIVE_DASHBOARDS = {'FJI', 'HAW', 'WSM', 'SLB', 'TON', 'VUT'}
+
+
+def restrict(plain, links):
+    d = json.loads(plain)
+    for c in d.get('countries', []):
+        code = c.get('code')
+        if code in links:
+            c['dashboard'], c['dashboardStatus'] = links[code], 'live'
+        elif c.get('dashboard') or code in LIVE_DASHBOARDS:
+            c['dashboard'], c['dashboardStatus'] = None, 'restricted'
+    return json.dumps(d, ensure_ascii=False, separators=(',', ':')).encode()
+
+
 TARGETS = {
     'regional': dict(src='regional-scholars.json.enc', pw='REGIONAL_PASSCODE',
                      out='regional-scholars.viewer.enc', key='REGIONAL_VIEWER_KEY',
@@ -52,6 +75,9 @@ TARGETS = {
     'vanuatu': dict(src='vanuatu-collaborator-bundle.json.enc', pw='VAVELAB_VANUATU_COLLABORATOR_PASSCODE',
                     out='vanuatu-collaborator-bundle.viewer.enc', key='VANUATU_VIEWER_KEY',
                     meta='vanuatu-viewer-access.json', extra=None),
+    'countries': dict(src='regional-scholars.json.enc', pw='REGIONAL_PASSCODE',
+                      out=None, key='REGIONAL_COUNTRY_VIEWERS',
+                      meta='regional-country-viewer-access.json', extra=None),
 }
 
 
@@ -72,6 +98,61 @@ def seal(plain, pw):
 
 def now_ms():
     return int(datetime.now(timezone.utc).timestamp() * 1000)
+
+
+class CountryTargets:
+    """One restricted Regional viewer copy per country (see 'countries')."""
+    def __init__(self, name):
+        self.name, self.t = name, TARGETS[name]
+        self.meta = DATA / self.t['meta']
+
+    def files(self):
+        return sorted(DATA.glob('regional-scholars-[a-z][a-z][a-z].viewer.enc'))
+
+    def build(self):
+        try:
+            cfg = json.loads(os.environ.get('REGIONAL_COUNTRY_VIEWERS') or '')
+        except ValueError:
+            sys.exit('REGIONAL_COUNTRY_VIEWERS secret is missing or not JSON')
+        plain = opens((DATA / self.t['src']).read_bytes(), os.environ.get('REGIONAL_PASSCODE', ''))
+        if plain is None:
+            sys.exit('REGIONAL_PASSCODE does not open regional-scholars.json.enc')
+        changed, keep = False, set()
+        for code, c in sorted(cfg.items()):
+            key = c.get('key', '')
+            if len(code) != 3 or not code.isalpha() or len(key) < 24:
+                sys.exit(f'REGIONAL_COUNTRY_VIEWERS entry {code[:3]!r} is malformed')
+            out = DATA / f'regional-scholars-{code.lower()}.viewer.enc'
+            keep.add(out.name)
+            body = restrict(plain, c.get('links') or {})
+            if not (out.exists() and opens(out.read_bytes(), key) == body):
+                out.write_bytes(seal(body, key)); changed = True
+        for f in self.files():
+            if f.name not in keep:
+                f.unlink(); changed = True
+        return changed
+
+    def remove(self):
+        gone = False
+        for f in (*self.files(), self.meta):
+            if f.exists():
+                f.unlink(); gone = True
+        return 'removed' if gone else 'unchanged'
+
+    def create(self):
+        exp_dt = datetime.fromisoformat(os.environ.get('VIEWER_EXPIRES', ''))
+        if exp_dt.tzinfo is None or exp_dt.timestamp() * 1000 <= now_ms():
+            sys.exit('VIEWER_EXPIRES must be a future time with a timezone')
+        meta_txt = json.dumps({'expires': exp_dt.isoformat(), 'expiresMs': int(exp_dt.timestamp() * 1000)}, indent=2) + '\n'
+        changed = self.build()
+        if not self.meta.exists() or self.meta.read_text() != meta_txt:
+            self.meta.write_text(meta_txt); changed = True
+        return 'created' if changed else 'unchanged'
+
+    def sync(self):
+        if not self.meta.exists() or now_ms() >= json.loads(self.meta.read_text()).get('expiresMs', 0):
+            return self.remove()
+        return 'updated' if self.build() else 'unchanged'
 
 
 class Target:
@@ -124,7 +205,7 @@ class Target:
 
 if __name__ == '__main__':
     if len(sys.argv) < 3 or sys.argv[2] not in ('create', 'sync', 'remove') or sys.argv[1] not in (*TARGETS, 'all'):
-        sys.exit('usage: regional_viewer_access.py regional|vanuatu|all create|sync|remove')
+        sys.exit('usage: regional_viewer_access.py regional|vanuatu|countries|all create|sync|remove')
     names = list(TARGETS) if sys.argv[1] == 'all' else [sys.argv[1]]
     for n in names:
-        print(f'{n}: ' + getattr(Target(n), sys.argv[2])())
+        print(f'{n}: ' + getattr((CountryTargets if n == 'countries' else Target)(n), sys.argv[2])())

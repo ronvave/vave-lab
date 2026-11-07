@@ -8,6 +8,8 @@ name: Regional viewer link
 # - After each regional rebuild or patch merge, and hourly, "sync" refreshes the
 #   viewer copy only when the data changed, and deletes it once the expiry has
 #   passed, which ends the link for everyone.
+# - "countries" keeps one restricted Regional copy per country (A1 links only
+#   that country's dashboard and Fiji's), from REGIONAL_COUNTRY_VIEWERS.
 # Logs show only created / updated / removed / unchanged.
 on:
   schedule:
@@ -24,7 +26,7 @@ on:
       target:
         description: 'Which dashboard'
         type: choice
-        options: [regional, vanuatu, all]
+        options: [regional, vanuatu, countries, all]
         default: all
       action:
         description: 'create or remove'
@@ -69,6 +71,7 @@ jobs:
           REGIONAL_VIEWER_COUNTRY_LINKS: ${{ secrets.REGIONAL_VIEWER_COUNTRY_LINKS }}
           VAVELAB_VANUATU_COLLABORATOR_PASSCODE: ${{ secrets.VAVELAB_VANUATU_COLLABORATOR_PASSCODE }}
           VANUATU_VIEWER_KEY: ${{ secrets.VANUATU_VIEWER_KEY }}
+          REGIONAL_COUNTRY_VIEWERS: ${{ secrets.REGIONAL_COUNTRY_VIEWERS }}
           VIEWER_EXPIRES: ${{ github.event.inputs.expires }}
         run: |
           set -euo pipefail

@@ -3899,13 +3899,14 @@
     .db-submit-modal__status.is-success { background: #ecfdf5; color: #065f46; border-left: 4px solid #16a34a; }
     .db-submit-modal__status.is-error   { background: #fef2f2; color: #991b1b; border-left: 4px solid #b91c1c; }
   </style>
+<script src="js/link-analytics.js"></script>
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'G-7LJP79H70W');
+  gtag('config', 'G-7LJP79H70W', window.vlGaCfg || {});
 </script>
 <!-- Vave Lab legal-footer styles (dark footer variant) -->
 <style>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Link Analytics — Pacific Scholars Dashboards</title>
+<link rel="stylesheet" href="css/link-analytics.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js" defer></script>
+<script src="js/link-analytics-dashboard.js" defer></script>
+</head>
+<body>
+<div class="la-gate" id="la-gate">
+  <form class="la-gate__box" id="la-gate-form" autocomplete="off">
+    <p class="la-eyebrow">Vave Lab · Private</p>
+    <h1>Link Analytics</h1>
+    <p class="la-gate__sub">Who opens the Regional and country dashboard links, for how long, and from where.</p>
+    <label for="la-pass">Passcode</label>
+    <div class="la-gate__row"><input id="la-pass" type="password" required autocomplete="current-password" /><button type="submit">Open</button></div>
+    <p class="la-gate__err" id="la-gate-err" role="alert"></p>
+  </form>
+</div>
+
+<div class="la-app" id="la-app" hidden>
+  <header class="la-head">
+    <div>
+      <p class="la-eyebrow">Pacific Scholars Dashboards</p>
+      <h1>Link Analytics</h1>
+    </div>
+    <div class="la-head__meta">
+      <span id="la-updated"></span>
+      <span class="la-head__note">Source: Google Analytics. New visits appear within 1–2 days.</span>
+    </div>
+    <div class="la-sample" id="la-sample" hidden>Sample data for preview only</div>
+  </header>
+
+  <div class="la-body">
+    <aside class="la-side" aria-label="Filters">
+      <section class="la-filter">
+        <h2>Dates</h2>
+        <div class="la-seg" id="la-range" role="group" aria-label="Date range">
+          <button type="button" data-days="7">7 days</button><button type="button" data-days="30">30 days</button><button type="button" data-days="90">90 days</button><button type="button" data-days="0" class="is-on">All</button>
+        </div>
+        <div class="la-dates"><label>From <input type="date" id="la-from" /></label><label>To <input type="date" id="la-to" /></label></div>
+      </section>
+      <section class="la-filter">
+        <div class="la-filter__head"><h2>Whose link</h2><span><button type="button" class="la-mini" data-all="lc">All</button><button type="button" class="la-mini" data-none="lc">None</button></span></div>
+        <div class="la-checks" id="la-f-lc"></div>
+      </section>
+      <section class="la-filter">
+        <div class="la-filter__head"><h2>Link type</h2><span><button type="button" class="la-mini" data-all="lt">All</button><button type="button" class="la-mini" data-none="lt">None</button></span></div>
+        <div class="la-checks" id="la-f-lt"></div>
+      </section>
+      <section class="la-filter">
+        <div class="la-filter__head"><h2>Dashboard opened</h2><span><button type="button" class="la-mini" data-all="dash">All</button><button type="button" class="la-mini" data-none="dash">None</button></span></div>
+        <div class="la-checks" id="la-f-dash"></div>
+      </section>
+      <section class="la-filter">
+        <div class="la-filter__head"><h2>Visitor location</h2><span><button type="button" class="la-mini" data-all="geo">All</button><button type="button" class="la-mini" data-none="geo">None</button></span></div>
+        <div class="la-checks la-checks--scroll" id="la-f-geo"></div>
+      </section>
+      <button type="button" class="la-reset" id="la-reset">Reset all filters</button>
+    </aside>
+
+    <main class="la-main" id="la-main">
+      <section class="la-kpis" id="la-kpis" aria-label="Totals"></section>
+
+      <section class="la-card la-span2">
+        <div class="la-card__head"><h2>Visits over time</h2>
+          <div class="la-seg la-seg--sm" id="la-trend-metric" role="group" aria-label="Measure"><button type="button" data-m="sessions" class="is-on">Visits</button><button type="button" data-m="secs">Time engaged</button><button type="button" data-m="views">Page views</button></div>
+        </div>
+        <p class="la-card__sub">Stacked by whose link was used.</p>
+        <div class="la-chart la-chart--trend"><canvas id="la-trend"></canvas></div>
+      </section>
+
+      <section class="la-card la-span2">
+        <div class="la-card__head"><h2>Link scorecard</h2><span class="la-card__hint">Click a column to sort</span></div>
+        <p class="la-card__sub">One row per country's links. Visits are Google Analytics sessions.</p>
+        <div class="la-tablewrap"><table class="la-table" id="la-score"></table></div>
+      </section>
+
+      <section class="la-card la-span2">
+        <div class="la-card__head"><h2>Where visitors are</h2>
+          <div class="la-seg la-seg--sm" id="la-map-metric" role="group" aria-label="Measure"><button type="button" data-m="sessions" class="is-on">Visits</button><button type="button" data-m="secs">Time engaged</button></div>
+        </div>
+        <p class="la-card__sub">Approximate location from Google Analytics. Click a bubble to filter by that country.</p>
+        <div class="la-mapgrid">
+          <div class="la-map" id="la-map"></div>
+          <div class="la-cities"><h3>Top cities</h3><ol id="la-cities"></ol></div>
+        </div>
+      </section>
+
+      <section class="la-card la-span2">
+        <div class="la-card__head"><h2>Panels people look at</h2>
+          <div class="la-seg la-seg--sm" id="la-panel-metric" role="group" aria-label="Measure"><button type="button" data-m="secs" class="is-on">Total time</button><button type="button" data-m="avg">Average per view</button><button type="button" data-m="count">Views</button></div>
+        </div>
+        <p class="la-card__sub">Time a panel was on screen (2 seconds minimum). Top 20 panels.</p>
+        <div class="la-chart la-chart--panels"><canvas id="la-panels"></canvas></div>
+      </section>
+
+      <section class="la-card">
+        <div class="la-card__head"><h2>Which dashboards each link opens</h2></div>
+        <p class="la-card__sub">Visits by whose link (rows) and dashboard (columns).</p>
+        <div class="la-tablewrap"><table class="la-heat" id="la-matrix"></table></div>
+      </section>
+
+      <section class="la-card">
+        <div class="la-card__head"><h2>When people visit</h2></div>
+        <p class="la-card__sub" id="la-when-sub">Visits by day and hour (Analytics time zone).</p>
+        <div class="la-tablewrap"><table class="la-heat la-heat--when" id="la-when"></table></div>
+      </section>
+
+      <section class="la-card">
+        <div class="la-card__head"><h2>Devices</h2></div>
+        <div class="la-chart la-chart--donut"><canvas id="la-devices"></canvas></div>
+      </section>
+
+      <section class="la-card">
+        <div class="la-card__head"><h2>Browsers and systems</h2>
+          <div class="la-seg la-seg--sm" id="la-tech-metric" role="group" aria-label="Group by"><button type="button" data-m="browser" class="is-on">Browser</button><button type="button" data-m="os">System</button></div>
+        </div>
+        <div class="la-chart la-chart--donut"><canvas id="la-tech"></canvas></div>
+      </section>
+
+      <section class="la-card la-span2">
+        <div class="la-card__head"><h2>Recent visits</h2><span class="la-card__hint" id="la-recent-count"></span></div>
+        <p class="la-card__sub">Latest 300 visits recorded. Times are in the Analytics time zone.</p>
+        <div class="la-tablewrap"><table class="la-table" id="la-recent"></table></div>
+        <button type="button" class="la-more" id="la-recent-more">Show 25 more</button>
+      </section>
+    </main>
+  </div>
+</div>
+</body>
+</html>

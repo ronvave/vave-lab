@@ -1,0 +1,64 @@
+name: Refresh link analytics
+
+# Pulls Google Analytics reports for the Regional and country dashboard links
+# (scripts/build_link_analytics.py) into data/link-analytics.json.enc, which
+# only link-analytics.html opens, with LINK_ANALYTICS_PASSCODE.
+# Runs every 6 hours and on demand. Logs show only updated / unchanged.
+on:
+  schedule:
+    - cron: "20 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: link-analytics
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip quietly until Google Analytics is set up
+        id: pre
+        env:
+          GA_PROPERTY_ID: ${{ secrets.GA_PROPERTY_ID }}
+        run: |
+          if [ -z "$GA_PROPERTY_ID" ]; then echo "GA_PROPERTY_ID secret not set yet"; echo "skip=1" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.pre.outputs.skip != '1'
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        if: steps.pre.outputs.skip != '1'
+        with:
+          python-version: '3.11'
+      - run: pip install --quiet cryptography google-auth requests
+        if: steps.pre.outputs.skip != '1'
+      - name: Build
+        id: run
+        if: steps.pre.outputs.skip != '1'
+        env:
+          GA_PROPERTY_ID: ${{ secrets.GA_PROPERTY_ID }}
+          GA_SERVICE_ACCOUNT_JSON: ${{ secrets.VANUATU_GOOGLE_SERVICE_ACCOUNT_JSON }}
+          LINK_ANALYTICS_PASSCODE: ${{ secrets.LINK_ANALYTICS_PASSCODE }}
+        run: |
+          set -euo pipefail
+          out=$(python3 scripts/build_link_analytics.py)
+          echo "$out"
+          if echo "$out" | grep -q ': updated$'; then echo "result=changed" >> "$GITHUB_OUTPUT"; fi
+      - name: Commit and deploy
+        if: steps.run.outputs.result == 'changed'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- data/link-analytics.json.enc
+          git diff --cached --name-only | grep -vE "^data/link-analytics\.json\.enc$" && { echo "::error::unexpected staged files"; exit 1; } || true
+          git commit -m "Link analytics: refresh"
+          for i in 1 2 3 4; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done
+          gh workflow run deploy-pages-validated.yml --ref main

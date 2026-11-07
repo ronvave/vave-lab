@@ -201,7 +201,7 @@
     const initials = (words.length > 1 ? words[0][0] + words[words.length - 1][0] : (words[0] || '?').slice(0, 2)).toUpperCase();
     // Opens this scholar's profile on the country dashboard, with Explain their research open when recorded.
     const dash = cc.dashboard ? `<a href="${esc(profileUrl(s))}" target="_blank" rel="noopener" title="Open ${esc(s.n)}\u2019s profile on the ${esc(cc.name)} dashboard">View on ${esc(cc.name)} dashboard \u2197</a>`
-      : `<span class="muted">${cc.dashboardStatus === 'development' ? `${esc(cc.name)} dashboard in development` : `No ${esc(cc.name)} dashboard yet`}</span>`;
+      : `<span class="muted">${cc.dashboardStatus === 'restricted' ? `${esc(cc.name)} dashboard not included in this link` : cc.dashboardStatus === 'development' ? `${esc(cc.name)} dashboard in development` : `No ${esc(cc.name)} dashboard yet`}</span>`;
     const types = {}; (s.p || []).forEach(i => { const t = TYPE[P[i].t] ? P[i].t : 'other'; types[t] = (types[t] || 0) + 1; });
     const chips = Object.entries(TYPE).filter(([k]) => types[k]).map(([k, t]) => `<span class="tchip" style="background:${t.bg};border-color:${t.border};color:${t.color}"><span class="n">${types[k]}</span> ${types[k] === 1 ? t.s : t.p}</span>`).join('');
     const name = `${s.sal ? s.sal + ' ' : ''}${s.n}`;

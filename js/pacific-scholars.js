@@ -108,13 +108,18 @@
   async function tryViewerLink(err) {
     const m = /(?:^|[#&])view=([A-Za-z0-9_-]{24,})/.exec(location.hash);
     if (!m) return;
+    // Country viewer links (&lc=HAW) open that country's own copy, where A1
+    // links only that country's dashboard and Fiji's.
+    const lc = (/(?:^|[#&])lc=([A-Z]{3})(?:&|$)/.exec(location.hash) || [])[1];
+    const metaUrl = lc ? 'data/regional-country-viewer-access.json' : 'data/regional-viewer-access.json';
+    const encUrl = lc ? `data/regional-scholars-${lc.toLowerCase()}.viewer.enc` : 'data/regional-scholars.viewer.enc';
     err.textContent = 'Opening viewer link…';
     let msg = 'This viewer link has ended. Please ask for a new link.';
     try {
-      const meta = await fetch('data/regional-viewer-access.json?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.json() : null));
+      const meta = await fetch(metaUrl + '?t=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.json() : null));
       if (meta && Date.now() >= meta.expiresMs) msg = 'This viewer link has expired. Please ask for a new link.';
       else if (meta) {
-        const res = await fetch('data/regional-scholars.viewer.enc?t=' + Date.now(), { cache: 'no-store' });
+        const res = await fetch(encUrl + '?t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
           msg = 'This viewer link is not valid.';
           const buf = new Uint8Array(await res.arrayBuffer());
@@ -348,6 +353,8 @@
         .map((k, j) => `<span class="ps-b-card__mini ps-b-card__mini--${j ? 'b' : 'a'}"><b>${fmt(c[k])}</b>${B_MINI[k]}</span>`).join('');
       const btn = c.dashboard
         ? `<a class="ps-b-card__btn" href="${esc(c.dashboard)}" target="_blank" rel="noopener" aria-label="View ${esc(c.name)} dashboard (opens in a new tab; separate passcode)">View dashboard</a>`
+        : c.dashboardStatus === 'restricted'
+          ? '<span class="ps-b-card__btn ps-b-card__btn--none" title="This link opens only your country\u2019s dashboard and Fiji\u2019s">Not included in this link</span>'
         : c.dashboardStatus === 'development'
           ? '<span class="ps-b-card__btn ps-b-card__btn--dev">In development</span>'
           : '<span class="ps-b-card__btn ps-b-card__btn--none">No dashboard yet</span>';
@@ -445,7 +452,7 @@
     setView([cx - w / 2, cy - (w * H / W) / 2, w, w * H / W]);
   }
   function mapTip(c) {
-    const link = c.dashboard ? 'Country dashboard available (separate passcode)' : (c.dashboardStatus === 'development' ? 'Dashboard in development' : 'No country dashboard yet');
+    const link = c.dashboard ? 'Country dashboard available (separate passcode)' : c.dashboardStatus === 'restricted' ? 'Country dashboard not included in this link' : (c.dashboardStatus === 'development' ? 'Dashboard in development' : 'No country dashboard yet');
     return `<b>${esc(c.name)}</b>${fmt(c.scholars)} Indigenous scholars<br>${fmt(c.masters)} completed Master's · ${fmt(c.phd)} completed PhDs${c.profDoc ? ` (incl. ${c.profDoc} professional doctorate${c.profDoc > 1 ? 's' : ''})` : ''}<br>${fmt(c.pubsIndigenous)} Indigenous-linked publications<br><span style="color:#4a5d78">${link}. Click to filter.</span>`;
   }
   function renderMap() {
@@ -466,7 +473,7 @@
     // accessible table
     const rows = sorted();
     const t = $('#ps-map-table');
-    t.innerHTML = `<table class="ps-table"><caption>Countries sorted by ${esc(m.unit)} (descending)</caption><thead><tr><th scope="col">Country</th><th scope="col">Scholars (people)</th><th scope="col">Completed Master's</th><th scope="col">Completed PhDs</th><th scope="col">Dashboard</th></tr></thead><tbody>${rows.map(c => `<tr><th scope="row"><button class="ps-prov" type="button" data-sel="${c.code}">${esc(c.name)}</button></th><td>${fmt(c.scholars)}</td><td>${fmt(c.masters)}</td><td>${fmt(c.phd)}</td><td>${c.dashboard ? `<a href="${esc(c.dashboard)}">Open</a>` : (c.dashboardStatus === 'development' ? 'In development' : '—')}</td></tr>`).join('')}</tbody></table>`;
+    t.innerHTML = `<table class="ps-table"><caption>Countries sorted by ${esc(m.unit)} (descending)</caption><thead><tr><th scope="col">Country</th><th scope="col">Scholars (people)</th><th scope="col">Completed Master's</th><th scope="col">Completed PhDs</th><th scope="col">Dashboard</th></tr></thead><tbody>${rows.map(c => `<tr><th scope="row"><button class="ps-prov" type="button" data-sel="${c.code}">${esc(c.name)}</button></th><td>${fmt(c.scholars)}</td><td>${fmt(c.masters)}</td><td>${fmt(c.phd)}</td><td>${c.dashboard ? `<a href="${esc(c.dashboard)}">Open</a>` : c.dashboardStatus === 'restricted' ? 'Not included in this link' : (c.dashboardStatus === 'development' ? 'In development' : '—')}</td></tr>`).join('')}</tbody></table>`;
     $$('[data-sel]', t).forEach(b => b.addEventListener('click', () => select(b.dataset.sel)));
   }
 
@@ -1575,7 +1582,7 @@
   }
   function show(title, html) { $('#ps-dialog-title').textContent = title; $('#ps-dialog-body').innerHTML = html; $('#ps-dialog').showModal(); }
   function sourceTable() {
-    return `<table class="ps-table"><caption>Source-of-truth inventory (read-only access via Google Sheets API at build time)</caption><thead><tr><th>Country</th><th>Authoritative Master file</th><th>Access</th><th>Master last modified</th><th>Dashboard</th></tr></thead><tbody>${D.sources.map(s => { const c = byCode[s.code] || {}; return `<tr><td>${esc(s.name)}</td><td>${esc(s.file || '—')}</td><td>${esc(s.status)}</td><td>${s.modified ? new Date(s.modified).toLocaleString() : '—'}</td><td>${c.dashboard ? 'Live (gated)' : c.dashboardStatus === 'development' ? 'In development' : 'None'}</td></tr>`; }).join('')}</tbody></table>`;
+    return `<table class="ps-table"><caption>Source-of-truth inventory (read-only access via Google Sheets API at build time)</caption><thead><tr><th>Country</th><th>Authoritative Master file</th><th>Access</th><th>Master last modified</th><th>Dashboard</th></tr></thead><tbody>${D.sources.map(s => { const c = byCode[s.code] || {}; return `<tr><td>${esc(s.name)}</td><td>${esc(s.file || '—')}</td><td>${esc(s.status)}</td><td>${s.modified ? new Date(s.modified).toLocaleString() : '—'}</td><td>${c.dashboard ? 'Live (gated)' : c.dashboardStatus === 'restricted' ? 'Live (not in this link)' : c.dashboardStatus === 'development' ? 'In development' : 'None'}</td></tr>`; }).join('')}</tbody></table>`;
   }
   function reconTable() {
     const d = (a, b) => { if (b == null) return ''; const x = a - b; return x === 0 ? '0' : `<span class="${x > 0 ? 'diff-up' : 'diff-down'}">${x > 0 ? '+' : ''}${x}</span>`; };
