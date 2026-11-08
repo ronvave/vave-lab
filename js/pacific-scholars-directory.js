@@ -490,5 +490,10 @@
     });
     return hits.length === 1 ? hits[0].id : '';
   }
-  window.PSDirectory = { init, scholarPhoto, findId, scholars: () => S };
+  // Panel B2 list: the same profile photo as the directory card, by Scholar ID.
+  function photoById(id) {
+    const s = S.find(x => x.id === id); if (!s) return '';
+    return s.ph || (X[id] && X[id].ph) || (window.PSFirstsById && window.PSFirstsById[id]) || '';
+  }
+  window.PSDirectory = { init, scholarPhoto, findId, photoById, scholars: () => S };
 })();

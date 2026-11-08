@@ -1138,7 +1138,10 @@
     const name = d ? `<a href="#dir=${esc(s.id)}" title="Open this scholar's card in the Regional Scholar Directory">${esc(s.n)}</a>` : esc(s.n);
     const place = d && d.geo ? `<div class="ps-cl-place">${esc(d.geo)}</div>` : '';
     const uni = U.length ? `<div class="ps-cl-uni">${U.map(u => `${esc(u[0])}${u[1] ? ` <b>(${esc(u[1])})</b>` : ''}`).join('; ')}</div>` : '<div class="ps-cl-uni ps-cl-uni--na">Institution not recorded</div>';
-    return `<li class="ps-cl-row">${flagRect(s.c)}<div class="ps-cl-who"><div class="ps-cl-nm">${name}${yrs ? `<span class="ps-cl-yrs">${esc(yrs)}</span>` : ''}</div>${place}${uni}</div><span class="ps-cl-pill ${e.cur ? 'cur' : 'for'}">${e.cur ? 'Current' : 'Former'}</span></li>`;
+    const ph = (window.PSDirectory && window.PSDirectory.photoById && window.PSDirectory.photoById(s.id)) || '';
+    const ini = s.n.replace(/\([^)]*\)/g, ' ').replace(/[‘’ʻ'`]/g, '').split(/\s+/).filter(w => /^[A-Za-zÀ-ž]/.test(w)).map(w => w[0].toUpperCase());
+    const photo = `<div class="ps-cl-ph" aria-hidden="true"><span>${esc((ini[0] || '') + (ini.length > 1 ? ini[ini.length - 1] : ''))}</span>${ph ? `<img src="${esc(ph)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ''}</div>`;
+    return `<li class="ps-cl-row"><div class="ps-cl-side">${flagRect(s.c)}<span class="ps-cl-pill ${e.cur ? 'cur' : 'for'}">${e.cur ? 'Current' : 'Former'}</span></div><div class="ps-cl-who"><div class="ps-cl-nm">${name}${yrs ? `<span class="ps-cl-yrs">${esc(yrs)}</span>` : ''}</div>${place}${uni}</div>${photo}</li>`;
   }
   function setupCareerViews() {
     const P = D.positions; if (!P) return;
@@ -1158,6 +1161,7 @@
       if (b.dataset.k === '*') { CL.pos = null; } else { cur.has(b.dataset.k) ? cur.delete(b.dataset.k) : cur.add(b.dataset.k); CL.pos = cur.size ? all.filter(k => cur.has(k)) : null; }
       renderCList();
     });
+    $('#ps-cl-list').addEventListener('error', e => { if (e.target.tagName === 'IMG' && e.target.closest('.ps-cl-ph')) e.target.remove(); }, true);
     $('#ps-cl-list').addEventListener('click', e => { const b = e.target.closest('button[data-more]'); if (!b) return; const k = b.dataset.more; CL.open.has(k) ? CL.open.delete(k) : CL.open.add(k); renderCList(); });
     $('#ps-cw-hosts').addEventListener('click', e => { const b = e.target.closest('button[data-h]'); if (b) { CW.host = b.dataset.h; CW.uni = null; CW.allUnis = false; renderCWork(); } const m = e.target.closest('button[data-allhosts]'); if (m) { CW.allHosts = !CW.allHosts; renderCWork(); } });
     $('#ps-cw-unis').addEventListener('click', e => { const r = e.target.closest('[data-u]'); if (r) { CW.uni = CW.uni === r.dataset.u ? null : r.dataset.u; renderCWork(); } const m = e.target.closest('button[data-allunis]'); if (m) { CW.allUnis = !CW.allUnis; renderCWork(); } });
