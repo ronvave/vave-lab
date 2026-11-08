@@ -5,7 +5,7 @@
   const groups = {
     A: [['A1','Database overview'],['A2','Tongan scholarship'],['A3','Celebrating Tongan scholars']],
     B: [['B1','Research across Tonga'],['B2','Where scholars studied'],['B3','Master’s–PhD pathways'],['B4','Graduate research disciplines'],['B5','Research around the world']],
-    C: [['C1','Publications by gender'],['C2','Research by study district'],['C3','Research by scholar’s home district']],
+    C: [['C1','Publications by gender'],['C1b','Publications by gender: infographic'],['C2','Research by study district'],['C3','Research by scholar’s home district']],
     D: [['D','Publications over time']], E: [['E','Rankings by islands']],
     F: [['F','Scholar profiles']], G: [['G','Browse publications']], H: [['H','About & methodology']]
   };
