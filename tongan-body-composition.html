@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tongan Scholar Publications by Gender — Prof. Ron Vave | UH Mānoa</title>
+  <title>Tongan Scholar Publications by Gender (Infographic) — Prof. Ron Vave | UH Mānoa</title>
   <meta name="description" content="Body-composition chart of Tongan scholars' publications by gender, part of the Tongan Scholarly Research Database." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -144,7 +144,56 @@
     body.is-embedded.is-embed-fullscreen html { height:100vh !important; }
     body.is-embedded.is-embed-fullscreen #wrap { height:100vh !important; padding:16px 24px !important; display:flex; flex-direction:column; }
     body.is-embedded.is-embed-fullscreen #chart { flex:1 1 auto; height:auto !important; min-height:0 !important; width:100% !important; }
-  </style>
+  
+    /* ---- C1b infographic layout ---- */
+    body.is-embedded #status{ display:none !important; }
+    .c1b-stage{ position:relative; background:#fbf7ec; border-radius:14px; overflow:hidden; }
+    /* The stage is laid out at a 760px design height and scaled as one unit
+       (fit script) to the iframe, in both normal and full-screen view; its
+       design width widens on wide screens so no space is left empty. */
+    body.is-embedded #wrap{ padding:0 !important; overflow:hidden; height:100vh; display:block !important; }
+    body.is-embedded .c1b-stage{ position:fixed; left:0; top:0; height:760px; width:1080px; transform-origin:0 0; }
+    body.is-embedded.is-embed-fullscreen .c1b-stage{ border-radius:0; }
+    body.is-embedded #chart, body.is-embedded.is-embed-fullscreen #chart{ flex:none !important; height:760px !important; min-height:0 !important; width:100% !important; position:relative; z-index:2; }
+    .c1b-leaves{ position:absolute; top:6px; height:38%; width:auto; z-index:0; pointer-events:none; user-select:none; }
+    .c1b-leaves{ opacity:.55; }
+    .c1b-leaves--l{ left:-1%; } .c1b-leaves--r{ right:-1%; }
+    .c1b-card{ position:absolute; top:12px; height:490px; z-index:3; background:#1f5a2e; border-radius:24px; padding:10px; box-sizing:border-box; display:flex; flex-direction:column; font-family:'DM Sans',Arial,sans-serif; box-shadow:0 3px 10px rgba(31,90,46,.12); }
+    .c1b-pill{ background:#fffdf6; border-radius:16px; height:58px; display:flex; align-items:center; justify-content:center; gap:calc(16px*var(--k,1)); font-size:calc(30px*var(--k,1)); font-weight:700; color:#16211a; white-space:nowrap; }
+    .c1b-pill img{ height:calc(30px*var(--k,1)); width:auto; border-radius:2px; box-shadow:0 0 0 1px rgba(0,0,0,.08); }
+    .c1b-pill .sep{ width:2px; height:34px; background:#9aa59c; }
+    .c1b-pill .c1b-ico{ width:calc(38px*var(--k,1)); height:calc(38px*var(--k,1)); flex:0 0 calc(38px*var(--k,1)); }
+    .c1b-pill span{ display:inline-flex; align-items:center; gap:10px; }
+    .c1b-card__head{ color:#fff; text-align:center; font-weight:700; letter-spacing:calc(5px*var(--k,1)); font-size:calc(32px*var(--k,1)); padding:9px 0 10px; }
+    .c1b-card__body{ flex:1; min-height:0; background:#fffdf6; border-radius:16px; display:flex; align-items:center; justify-content:center; gap:10px; padding:6px 18px 6px 8px; }
+    #c1b-donut{ width:calc(300px*var(--k,1)); height:calc(300px*var(--k,1)); flex:0 0 calc(300px*var(--k,1)); }
+    .c1b-legend{ list-style:none; margin:0; padding:4px 0 4px calc(20px*var(--k,1)); border-left:2px solid #6c8f6f; display:flex; flex-direction:column; gap:calc(20px*var(--k,1)); }
+    .c1b-legend li{ display:flex; align-items:center; gap:calc(12px*var(--k,1)); font-size:calc(22px*var(--k,1)); font-weight:700; color:#16211a; white-space:nowrap; }
+    .c1b-legend .dot{ width:calc(28px*var(--k,1)); height:calc(28px*var(--k,1)); border-radius:50%; flex:0 0 calc(28px*var(--k,1)); }
+    .c1b-legend b{ color:#1a3fd6; }
+    .c1b-cap{ position:absolute; bottom:248px; transform:translateX(-50%); z-index:3; display:flex; flex-direction:column; align-items:center; font-family:'DM Sans',Arial,sans-serif; }
+    .c1b-cap--l{ left:12%; } .c1b-cap--r{ left:88%; }
+    .c1b-cap__name{ white-space:nowrap; background:#1f5a2e; color:#fff; font-weight:700; font-size:19px; padding:5px 20px; border-radius:999px; position:relative; z-index:1; }
+    .c1b-cap__name span{ font-weight:600; font-size:16px; }
+    .c1b-cap__box{ background:#fffdf6; border:1.5px solid #1f5a2e; border-radius:12px; padding:14px 22px 8px; display:flex; flex-direction:column; gap:6px; }
+    .c1b-cap__box div{ display:flex; align-items:center; gap:12px; font-size:17px; font-weight:600; color:#1c2530; white-space:nowrap; }
+    .c1b-ico{ width:26px; height:26px; fill:#1f5a2e; flex:0 0 26px; }
+    .c1b-cmp{ position:absolute; left:18px; right:18px; bottom:14px; z-index:3; background:rgba(255,253,246,.94); border:2px solid #1f5a2e; border-radius:18px; padding:30px 20px 14px; font-family:'DM Sans',Arial,sans-serif; }
+    .c1b-cmp__title{ position:absolute; left:50%; top:0; transform:translate(-50%,-50%); background:#1f5a2e; color:#fff; font-weight:700; letter-spacing:2.5px; font-size:18px; padding:6px 32px; border-radius:999px; white-space:nowrap; }
+    .c1b-cmp__grid{ display:grid; grid-template-columns:1fr 1.15fr 1.15fr .9fr; gap:8px 10px; }
+    .c1b-cmp__h{ text-align:center; font-weight:700; font-size:19px; padding:6px 0; border-radius:12px 12px 0 0; background:#1f5a2e; color:#fff; }
+    .c1b-cmp__h span{ font-weight:600; font-size:17px; }
+    .c1b-cmp__h--t{ background:#e9d39b; color:#1c2530; }
+    .c1b-cmp__lab{ display:flex; align-items:center; gap:14px; padding:7px 18px; background:#dcebd6; border-radius:6px; font-size:19px; font-weight:600; color:#1c2530; }
+    .c1b-cmp__lab .c1b-ico{ width:32px; height:32px; flex:0 0 32px; }
+    .c1b-cmp__v{ display:flex; align-items:center; justify-content:center; background:#e6f1df; border-radius:6px; font-size:22px; font-weight:700; color:#111; padding:7px 0; }
+    .c1b-cmp__v b{ color:#1a3fd6; margin-left:6px; }
+    .c1b-cmp__v--t{ background:#f6ecd0; }
+    .c1b-cmp__v--t i{ font-style:normal; font-weight:600; margin-left:6px; }
+    .c1b-border{ position:absolute; left:0; right:0; bottom:0; height:34px; background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='34'><rect width='36' height='34' fill='%231f5a2e'/><rect y='5' width='36' height='2' fill='%23ffffff'/><rect y='27' width='36' height='2' fill='%23ffffff'/><path d='M0 25 L9 11 L18 25 Z M18 25 L27 11 L36 25 Z' fill='none' stroke='%23ffffff' stroke-width='2'/><path d='M6 22 L9 17 L12 22Z M24 22 L27 17 L30 22Z' fill='%23ffffff'/></svg>") repeat-x; z-index:3; }
+    .c1b-border__medal{ position:absolute; left:50%; bottom:2px; transform:translateX(-50%); width:54px; height:54px; border-radius:50%; background:#fbf7ec; border:3px solid #1f5a2e; display:flex; align-items:center; justify-content:center; color:#1f5a2e; }
+    .c1b-border__medal .c1b-hib{ width:40px; height:40px; }
+</style>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
   <script>
@@ -268,7 +317,26 @@
       <div id="wrap">
         <div class="bc-title">Tongan Scholar Publications by Gender</div>
         <div class="bc-subtitle">Each body = 100 % of that gender&rsquo;s publications, split by type &nbsp;&middot;&nbsp; bands fill bottom-to-top</div>
-        <div id="chart"></div>
+<div class="c1b-stage" id="c1b-stage">
+          <img class="c1b-leaves c1b-leaves--l" src="img/tonga-c1b-monstera-l.webp" alt="" aria-hidden="true">
+          <img class="c1b-leaves c1b-leaves--r" src="img/tonga-c1b-monstera-r.webp" alt="" aria-hidden="true">
+          <div id="chart"></div>
+          <div class="c1b-card" id="c1b-card">
+            <div class="c1b-pill"><img src="img/regional/flags-rect/ton.webp" alt="Tonga flag"><i class="sep"></i><span><svg viewBox="0 0 24 24" class="c1b-ico"><circle cx="12" cy="7" r="3.4"/><circle cx="5" cy="9" r="2.6"/><circle cx="19" cy="9" r="2.6"/><path d="M5.5 20c0-4 3-6.5 6.5-6.5s6.5 2.5 6.5 6.5z"/><path d="M0.5 19c0-3 2-5 4.6-5 1 0 1.8.3 2.4.7-1.6 1.2-2.6 2.6-2.8 4.3z"/><path d="M23.5 19c0-3-2-5-4.6-5-1 0-1.8.3-2.4.7 1.6 1.2 2.6 2.6 2.8 4.3z"/></svg><span><span data-c1b="scholars">—</span>&nbsp;Scholars</span></span><i class="sep"></i><span><svg viewBox="0 0 24 24" class="c1b-ico"><path d="M2 5c3-1 6.5-1 9 1v14c-2.5-2-6-2-9-1z"/><path d="M22 5c-3-1-6.5-1-9 1v14c2.5-2 6-2 9-1z"/></svg><span><span data-c1b="pubs">—</span>&nbsp;Publications</span></span></div>
+            <div class="c1b-card__head">PUBLICATION TYPES</div>
+            <div class="c1b-card__body">
+                <div id="c1b-donut" role="img" aria-label="Donut chart of publication types"></div>
+                <ul class="c1b-legend" id="c1b-legend"></ul>
+              </div>
+          </div>
+          <div class="c1b-cap c1b-cap--l"><div class="c1b-cap__name">Tangata <span>(Male)</span></div></div>
+          <div class="c1b-cap c1b-cap--r"><div class="c1b-cap__name">Fefine <span>(Female)</span></div></div>
+          <div class="c1b-cmp"><div class="c1b-cmp__title">GENDERED COMPARISON</div><div class="c1b-cmp__grid">
+            <div></div><div class="c1b-cmp__h">Tangata <span>(Male)</span></div><div class="c1b-cmp__h">Fefine <span>(Female)</span></div><div class="c1b-cmp__h c1b-cmp__h--t">Total</div>
+            <div class="c1b-cmp__lab"><svg viewBox="0 0 24 24" class="c1b-ico"><circle cx="12" cy="7" r="3.4"/><circle cx="5" cy="9" r="2.6"/><circle cx="19" cy="9" r="2.6"/><path d="M5.5 20c0-4 3-6.5 6.5-6.5s6.5 2.5 6.5 6.5z"/><path d="M0.5 19c0-3 2-5 4.6-5 1 0 1.8.3 2.4.7-1.6 1.2-2.6 2.6-2.8 4.3z"/><path d="M23.5 19c0-3-2-5-4.6-5-1 0-1.8.3-2.4.7 1.6 1.2 2.6 2.6 2.8 4.3z"/></svg>Scholars</div><div class="c1b-cmp__v" data-c1b="l-sch">—</div><div class="c1b-cmp__v" data-c1b="r-sch">—</div><div class="c1b-cmp__v c1b-cmp__v--t" data-c1b="t-sch">—</div>
+            <div class="c1b-cmp__lab"><svg viewBox="0 0 24 24" class="c1b-ico"><path d="M2 5c3-1 6.5-1 9 1v14c-2.5-2-6-2-9-1z"/><path d="M22 5c-3-1-6.5-1-9 1v14c2.5-2 6-2 9-1z"/></svg>Publications</div><div class="c1b-cmp__v" data-c1b="l-pub">—</div><div class="c1b-cmp__v" data-c1b="r-pub">—</div><div class="c1b-cmp__v c1b-cmp__v--t" data-c1b="t-pub">—</div>
+          </div></div>
+        </div>
         <div class="caption" id="cap">Source: Tongan Scholarly Research Database.</div>
         <div id="status"></div>
 
@@ -457,7 +525,7 @@ if (document.body.classList.contains('is-embedded')) {
   // scale the silhouettes into fullscreen. A bare chart.resize() only re-
   // lays out the axes; the pictorialBar symbolSize is baked in at setOption.
   let lastRenderW = 0;
-  const RENDER_EPSILON = 24;  // px — avoid rebuilds on 1-2 px jitter
+  const RENDER_EPSILON = 2;  // px — avoid rebuilds on 1-2 px jitter
   const rerenderIfNeeded = () => {
     try {
       const w = chartDom.clientWidth || 0;
@@ -477,6 +545,34 @@ if (document.body.classList.contains('is-embedded')) {
     new ResizeObserver(rerenderIfNeeded).observe(chartDom);
   }
 }
+/* Fit the C1b stage to the screen in full-screen view. The layout is designed
+   at 760px tall; we pick a design width that matches the screen's shape
+   (1080-1900px) and scale everything uniformly so nothing is left empty. */
+(function(){
+  const stage = document.getElementById("c1b-stage");
+  if (!stage || !document.body.classList.contains("is-embedded")) return;
+  const DH = 760, MINW = 960, MAXW = 1900;
+  let lastKey = "";
+  function fit(){
+    const vw = window.innerWidth, vh = window.innerHeight;
+    if (!vw || !vh) return;
+    let s = vh / DH, dw = vw / s;
+    if (dw < MINW){ dw = MINW; s = vw / MINW; }
+    if (dw > MAXW){ dw = MAXW; }
+    const key = vw+"x"+vh;
+    if (key === lastKey) return; lastKey = key;
+    stage.style.width = Math.round(dw) + "px";
+    stage.style.left = Math.max(0, (vw - dw*s)/2) + "px";
+    stage.style.top = Math.max(0, (vh - DH*s)/2) + "px";
+    stage.style.height = DH + "px";
+    stage.style.transform = "scale(" + s + ")";
+  }
+  window.__fitC1bStage = fit;
+  window.addEventListener("resize", fit);
+  new MutationObserver(()=>{ lastKey=""; fit(); try{ c1bDonut && c1bDonut.resize(); }catch(e){} })
+    .observe(document.body, { attributes:true, attributeFilter:["class"] });
+  fit();
+})();
 const statusEl = document.getElementById("status");
 const capEl = document.getElementById("cap");
 const msgEl = document.getElementById("upload-msg");
@@ -488,12 +584,40 @@ function setMsg(text, kind){
 
 /* Build the ECharts option from a {Woman:{...}, Man:{...}} data object.
    Each gender's five counts are converted to a % of that gender's total. */
+const C1B_GRID_TOP = -64, C1B_GRID_BOTTOM = 280;
+/* C1b geometry (design px): figures sit at the outer edges, the Publication
+   Types card fills the space between them with a clear GAP on each side. When
+   the stage is very wide the card stops growing and the figures move inward. */
+const C1B_GEO = { M:40, GAP:34, CWMAX:880 };
+function c1bGeom(dw, chartH){
+  const bw = Math.round((chartH - C1B_GRID_BOTTOM - C1B_GRID_TOP) * 0.86 * 150/521);
+  const hw = bw/2;
+  let cw = dw - 2*(C1B_GEO.M + bw + C1B_GEO.GAP), cx1 = C1B_GEO.M + hw;
+  if (cw > C1B_GEO.CWMAX){ cw = C1B_GEO.CWMAX; cx1 = dw/2 - cw/2 - C1B_GEO.GAP - hw; }
+  const w = 1.5*(dw - 2*cx1);           // 3 category slots; figures at 1/6 and 5/6
+  return { bw, hw, cx1, cx2: dw - cx1, cardL: (dw - cw)/2, cw, gridL: cx1 - w/6, gridR: dw - (cx1 - w/6) - w };
+}
+function c1bPlace(G){
+  const card = document.getElementById("c1b-card");
+  if (card){
+    card.style.left = G.cardL+"px"; card.style.width = G.cw+"px";
+    // Shrink the card's contents when it is narrower than its 800px design.
+    const k = Math.min(1, G.cw/800);
+    if (card.__k !== k){ card.__k = k; card.style.setProperty("--k", k);
+      window.__c1bK = k; try{ c1bDonut && c1bDonut.resize(); window.__lastBcData && c1bFill(window.__lastBcData); }catch(e){} }
+  }
+  const l = document.querySelector(".c1b-cap--l"), r = document.querySelector(".c1b-cap--r");
+  if (l) l.style.left = G.cx1+"px"; if (r) r.style.left = G.cx2+"px";
+  const t = document.querySelector(".c1b-cmp");
+  if (t){ const e = Math.max(C1B_GEO.M, G.cx1 - G.hw); t.style.left = e+"px"; t.style.right = e+"px"; }
+}
 function buildOption(data){
   // Master-file mode renders Turaga (Man) LEFT, Marama (Woman) RIGHT
   // to match Ron's reference figure; V1 keeps Woman-left/Man-right.
   const genders = IS_MASTER ? ["Man","Woman"] : ["Woman","Man"];
   // x positions for the two bodies (category axis)
-  const xCats = genders;
+  const xCats = [genders[0], "__gap__", genders[1]];
+  const spread = arr => [arr[0], "-", arr[1]];
 
   // Compute per-gender totals & percentages
   const pct = {};      // pct[gender][typeKey] = number (0..100)
@@ -521,13 +645,17 @@ function buildOption(data){
   //   * fullscreen (≥ 1400px):            BODY_W = 260
   //   * in between:                        linear interpolation
   const chartW = (chartDom && chartDom.clientWidth) || 1160;
-  const BODY_W = (function(){
+  const chartH = (chartDom && chartDom.clientHeight) || 760;
+  const C1B_G = c1bGeom(chartW, chartH); try{ c1bPlace(C1B_G); }catch(e){}
+  const BODY_W = C1B_G.bw;
+  const __unusedW = (function(){
     if (chartW <= 900)  return 150;
     if (chartW >= 1400) return 260;
     // Linear interpolation between the two anchors.
     return Math.round(150 + (chartW - 900) * (260 - 150) / (1400 - 900));
   })();
   const BODY_H = "86%";
+  const PILL_K = 1.2;
 
   // -- CUMULATIVE-CLIP technique (no stacking) --------------------------------
   // Each series draws the SAME body, clipped to a CUMULATIVE % from the bottom,
@@ -604,7 +732,7 @@ function buildOption(data){
       // value = cumulative % up to and INCLUDING this band (clip fills from bottom).
       // Each gender carries its OWN silhouette (Woman = dress, Man = broad).
       // Clip by AREA-equivalent height so each band's visible area == its data %.
-      data: genders.map(g=>({ value: clipH[g][i], symbol: BODY_SYMBOLS[g] })),
+      data: spread(genders.map(g=>({ value: clipH[g][i], symbol: BODY_SYMBOLS[g] }))),
       // label drawn separately (a dedicated scatter series) to sit at band midpoint
       label: { show:false }
     });
@@ -622,7 +750,7 @@ function buildOption(data){
     itemStyle: { color: "rgba(120,130,140,0.10)" },
     silent: true,
     z: 1,
-    data: genders.map(g=>({ value: 100, symbol: BODY_SYMBOLS[g] })),
+    data: spread(genders.map(g=>({ value: 100, symbol: BODY_SYMBOLS[g] }))),
     tooltip: { show:false },
     legendHoverLink: false
   };
@@ -667,7 +795,7 @@ function buildOption(data){
             } else {
               yPos = FEET_CLIP[g] + (cumMid[g][i]/100)*(HEAD_CLIP[g]-FEET_CLIP[g]);
             }
-            pts.push({ value:[gi, yPos], _lbl:(v<1 ? v.toFixed(1) : Math.round(v))+" %" });
+            pts.push({ value:[gi*2, yPos], _lbl:(v<1 ? v.toFixed(1) : Math.round(v))+" %" });
           }
         });
       });
@@ -679,11 +807,12 @@ function buildOption(data){
       formatter: p => p.data._lbl,
       color: "#ffffff",
       fontFamily: "DM Sans, system-ui, sans-serif",
-      fontSize: 12.5,
+      // Pills are sized in design px; the stage scale sizes them to the screen.
+      fontSize: 12.5*PILL_K,
       fontWeight: 700,
       backgroundColor: "rgba(28,37,48,0.72)",
-      borderRadius: 9,
-      padding: [2,6]
+      borderRadius: 9*PILL_K,
+      padding: [2*PILL_K,6*PILL_K]
     }
   };
 
@@ -723,7 +852,7 @@ function buildOption(data){
   return {
     animationDuration: 700,
     legend: {
-      show: true,
+      show: false,
       orient: "vertical",
       left: "center",
       top: "middle",
@@ -747,7 +876,7 @@ function buildOption(data){
     },
     // Centre grand-total block, shifted DOWN and enlarged (sits above the legend).
     graphic: {
-      type: "text", left: "center", top: "22%", z: 50, silent: true,
+      type: "text", invisible: true, left: "center", top: "22%", z: 50, silent: true,
       style: {
         text: fmtInt(combScholars) + " Tongan scholars\n" +
               fmtInt(combPubs) + " publications (100%)",
@@ -761,7 +890,7 @@ function buildOption(data){
       confine: true,
       formatter: p=>{
         if(p.seriesName==="__outline__" || p.seriesName==="__labels__") return "";
-        const g = xCats[p.dataIndex];
+        const g = xCats[p.dataIndex]; if(g==="__gap__") return "";
         const t = TYPES.find(t=>t.label===p.seriesName);
         if(!t) return "";
         const raw = Number((data[g]||{})[t.key])||0;
@@ -771,12 +900,12 @@ function buildOption(data){
                raw+" publication"+(raw===1?"":"s")+" ("+bpct+" % of this group)";
       }
     },
-    grid: { left: "2%", right: "2%", top: 62, bottom: 92, containLabel: true },
+    grid: { left: C1B_G.gridL, right: C1B_G.gridR, top: C1B_GRID_TOP, bottom: C1B_GRID_BOTTOM, containLabel: false },
     xAxis: {
       data: xCats,
       axisTick: { show:false },
       axisLine: { show:false },
-      axisLabel: {
+      axisLabel: { show:false,
         margin: 18,
         rich: {
           name: { fontFamily:"DM Sans, system-ui, sans-serif", fontSize:18, fontWeight:700, color:"#000000", lineHeight:26 },
@@ -790,6 +919,48 @@ function buildOption(data){
   };
 }
 
+
+/* ---- C1b infographic overlay (centre totals, donut, legend, captions) ---- */
+let c1bDonut = null;
+function c1bFill(data){
+  const g = k => data[k]||{};
+  const n = (d,k) => Number(d[k])||0;
+  const tot = {}; TYPES.forEach(t=> tot[t.key] = n(g("Man"),t.key)+n(g("Woman"),t.key));
+  const pubs = TYPES.reduce((s,t)=>s+tot[t.key],0);
+  const pubsOf = d => TYPES.reduce((s,t)=>s+n(d,t.key),0);
+  const scM = g("Man").scholars, scW = g("Woman").scholars;
+  const known = scM!=null || scW!=null;
+  const sch = (Number(scM)||0)+(Number(scW)||0);
+  const pct = v => (v>0 && v<1 ? v.toFixed(1) : Math.round(v))+"%";
+  const fmt = v => Number(v).toLocaleString("en-US");
+  const set = (k,v) => { const el=document.querySelector('[data-c1b="'+k+'"]'); if(el) el.textContent=v; };
+  set("scholars", known ? fmt(sch) : "—");
+  set("pubs", pubs ? fmt(pubs) : "—");
+  const setH = (k,h) => { const el=document.querySelector('[data-c1b="'+k+'"]'); if(el) el.innerHTML=h; };
+  [["l","Man"],["r","Woman"]].forEach(([side,k])=>{
+    const sc = g(k).scholars, p = pubsOf(g(k));
+    setH(side+"-sch", sc==null ? "—" : fmt(sc)+(sch>0?"<b>("+pct(Number(sc)/sch*100)+")</b>":""));
+    setH(side+"-pub", fmt(p)+(pubs>0?"<b>("+pct(p/pubs*100)+")</b>":""));
+  });
+  setH("t-sch", known ? fmt(sch)+"<i>(100%)</i>" : "—");
+  setH("t-pub", pubs ? fmt(pubs)+"<i>(100%)</i>" : "—");
+  const ul = document.getElementById("c1b-legend");
+  if (ul) ul.innerHTML = LEGEND_ORDER.map(k=>{ const t=TYPES.find(x=>x.key===k);
+    return '<li><span class="dot" style="background:'+t.color+'"></span><span>'+t.label+' (<b>'+(pubs?pct(tot[k]/pubs*100):"—")+'</b> | '+fmt(tot[k])+')</span></li>'; }).join("");
+  const el = document.getElementById("c1b-donut"); if(!el || !window.echarts) return;
+  if(!c1bDonut) c1bDonut = echarts.init(el, null, { renderer:"canvas" });
+  c1bDonut.setOption({
+    tooltip:{ trigger:"item", confine:true, formatter:p=> "<b>"+p.name+"</b><br/>"+fmt(p.value)+" publications ("+pct(p.percent)+")" },
+    graphic:{ type:"text", left:"center", top:"middle", silent:true, style:{ text:(pubs?fmt(pubs):"—")+"\n{s|Publications}", textAlign:"center", fill:"#1f5a2e", font:"800 "+Math.round(58*(window.__c1bK||1))+"px 'DM Sans',Arial,sans-serif", lineHeight:Math.round(60*(window.__c1bK||1)), rich:{ s:{ font:"700 "+Math.round(21*(window.__c1bK||1))+"px 'DM Sans',Arial,sans-serif", fill:"#16211a", lineHeight:Math.round(26*(window.__c1bK||1)) } } } },
+    series:[{ type:"pie", radius:["50%","97%"], center:["50%","50%"], startAngle:90, clockwise:true, avoidLabelOverlap:false,
+      itemStyle:{ borderColor:"#fffdf6", borderWidth:2 },
+      label:{ show:true, position:"inside", formatter:p=> p.percent>=3 ? pct(p.percent) : "", color:"#fff", fontFamily:"'DM Sans',Arial,sans-serif", fontWeight:700, fontSize:Math.round(26*(window.__c1bK||1)), textBorderColor:"rgba(0,0,0,.25)", textBorderWidth:2 },
+      labelLine:{ show:false }, emphasis:{ scale:true, scaleSize:4 },
+      data: LEGEND_ORDER.map(k=>{ const t=TYPES.find(x=>x.key===k); return { name:t.label, value:tot[k], itemStyle:{ color:t.color } }; }) }]
+  }, true);
+}
+window.addEventListener("resize", ()=>{ try{ c1bDonut && c1bDonut.resize(); }catch(e){} });
+
 /* Render helper + status text. */
 function render(data, label){
   // Cache the last dataset so the embedded ResizeObserver can rebuild the
@@ -797,6 +968,7 @@ function render(data, label){
   // fullscreen threshold. See the is-embedded resize block above.
   window.__lastBcData = data;
   chart.setOption(buildOption(data), true);
+  try { c1bFill(data); } catch(e){}
   const w = data.Woman||{}, m = data.Man||{};
   const wp = TYPES.reduce((s,t)=>s+(Number(w[t.key])||0),0);
   const mp = TYPES.reduce((s,t)=>s+(Number(m[t.key])||0),0);
