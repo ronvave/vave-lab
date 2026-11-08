@@ -514,7 +514,9 @@ const GRAND = { scholars: null, masters: null, phd: null, journal: null, book: n
 
 /* ---- Chart instance ------------------------------------------------------- */
 const chartDom = document.getElementById("chart");
-const chart = echarts.init(chartDom, null, { renderer: "canvas" });
+/* Draw at the expanded-view scale so silhouettes and pills stay sharp when the stage is scaled up. */
+const C1B_DPR = (function(){ const d = window.devicePixelRatio || 1; const s = Math.max(1, Math.min(3, (screen.height||760)/760, (screen.width||1900)/960)); return Math.min(6, d*s); })();
+const chart = echarts.init(chartDom, null, { renderer: "canvas", devicePixelRatio: C1B_DPR });
 // When embedded in the research-database iframe the container flips from the
 // standalone 1160px fixed width to width:100% via the is-embedded CSS. ECharts
 // caches its own dimensions at init, so we resize once the layout settles and
@@ -889,6 +891,7 @@ function buildOption(data){
     tooltip: {
       trigger: "item",
       confine: true,
+      appendTo: ()=> document.getElementById("c1b-stage") || chartDom,  // sit above the centre card
       formatter: p=>{
         if(p.seriesName==="__outline__" || p.seriesName==="__labels__") return "";
         const g = xCats[p.dataIndex]; if(g==="__gap__") return "";
@@ -949,9 +952,9 @@ function c1bFill(data){
   if (ul) ul.innerHTML = LEGEND_ORDER.map(k=>{ const t=TYPES.find(x=>x.key===k);
     return '<li><span class="dot" style="background:'+t.color+'"></span><span>'+t.label+' (<b>'+(pubs?pct(tot[k]/pubs*100):"—")+'</b> | '+(pubs?fmt(tot[k]):"—")+')</span></li>'; }).join("");
   const el = document.getElementById("c1b-donut"); if(!el || !window.echarts) return;
-  if(!c1bDonut) c1bDonut = echarts.init(el, null, { renderer:"canvas" });
+  if(!c1bDonut) c1bDonut = echarts.init(el, null, { renderer:"canvas", devicePixelRatio: C1B_DPR });
   c1bDonut.setOption({
-    tooltip:{ trigger:"item", confine:true, formatter:p=> "<b>"+p.name+"</b><br/>"+fmt(p.value)+" publications ("+pct(p.percent)+")" },
+    tooltip:{ trigger:"item", confine:true, appendTo: ()=> document.getElementById("c1b-stage") || el, formatter:p=> "<b>"+p.name+"</b><br/>"+fmt(p.value)+" publications ("+pct(p.percent)+")" },
     graphic:{ type:"text", left:"center", top:"middle", silent:true, style:{ text:(pubs?fmt(pubs):"—")+"\n{s|Publications}", textAlign:"center", fill:"#1f5a2e", font:"800 "+Math.round(58*(window.__c1bK||1))+"px 'DM Sans',Arial,sans-serif", lineHeight:Math.round(60*(window.__c1bK||1)), rich:{ s:{ font:"700 "+Math.round(21*(window.__c1bK||1))+"px 'DM Sans',Arial,sans-serif", fill:"#16211a", lineHeight:Math.round(26*(window.__c1bK||1)) } } } },
     series:[{ type:"pie", radius:["50%","97%"], center:["50%","50%"], startAngle:90, clockwise:true, avoidLabelOverlap:false,
       itemStyle:{ borderColor:"#fffdf6", borderWidth:2 },
