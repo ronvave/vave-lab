@@ -148,12 +148,11 @@
     /* ---- C1b infographic layout ---- */
     body.is-embedded #status{ display:none !important; }
     .c1b-stage{ position:relative; background:#fbf7ec; border-radius:14px; overflow:hidden; }
-    body.is-embedded #chart{ height:800px !important; position:relative; z-index:2; }
+    body.is-embedded #chart{ height:980px !important; position:relative; z-index:2; }
     body.is-embedded.is-embed-fullscreen .c1b-stage{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
-    .c1b-leaves{ position:absolute; top:0; bottom:40px; width:14%; display:flex; flex-direction:column; justify-content:space-around; z-index:0; pointer-events:none; opacity:.75; }
-    .c1b-leaves svg{ width:100%; height:auto; max-height:32%; }
-    .c1b-leaves--l{ left:-4%; } .c1b-leaves--l svg:nth-child(1){ transform:rotate(-24deg); } .c1b-leaves--l svg:nth-child(2){ transform:rotate(30deg) translateX(-18%); } .c1b-leaves--l svg:nth-child(3){ transform:rotate(-12deg); }
-    .c1b-leaves--r{ right:-4%; transform:scaleX(-1); } .c1b-leaves--r svg:nth-child(1){ transform:rotate(-24deg); } .c1b-leaves--r svg:nth-child(2){ transform:rotate(30deg) translateX(-18%); } .c1b-leaves--r svg:nth-child(3){ transform:rotate(-12deg); }
+    .c1b-leaves{ position:absolute; top:6px; height:38%; width:auto; z-index:0; pointer-events:none; user-select:none; }
+    .c1b-leaves{ opacity:.55; }
+    .c1b-leaves--l{ left:-1%; } .c1b-leaves--r{ right:-1%; }
     .c1b-center{ position:absolute; left:50%; top:14px; width:48%; transform:translateX(-50%); z-index:3; text-align:center; font-family:Georgia,'Times New Roman',serif; color:#1d4a28; }
     .c1b-title{ font-size:46px; line-height:1.02; font-weight:700; letter-spacing:-.5px; }
     .c1b-rule{ display:flex; align-items:center; gap:10px; margin:10px 6% 2px; color:#d4920f; }
@@ -170,13 +169,25 @@
     .c1b-legend li{ display:flex; align-items:center; gap:9px; font-size:15px; font-weight:600; color:#1c2530; white-space:nowrap; }
     .c1b-legend .dot{ width:17px; height:17px; border-radius:50%; flex:0 0 17px; }
     .c1b-legend b{ color:#1a3fd6; }
-    .c1b-cap{ position:absolute; bottom:52px; transform:translateX(-50%); z-index:3; display:flex; flex-direction:column; align-items:center; font-family:'DM Sans',Arial,sans-serif; }
+    .c1b-cap{ position:absolute; bottom:326px; transform:translateX(-50%); z-index:3; display:flex; flex-direction:column; align-items:center; font-family:'DM Sans',Arial,sans-serif; }
     .c1b-cap--l{ left:16.667%; } .c1b-cap--r{ left:83.333%; }
-    .c1b-cap__name{ background:#1f5a2e; color:#fff; font-weight:700; font-size:19px; padding:5px 22px; border-radius:999px; position:relative; z-index:1; margin-bottom:-6px; }
+    .c1b-cap__name{ white-space:nowrap; background:#1f5a2e; color:#fff; font-weight:700; font-size:19px; padding:5px 22px; border-radius:999px; position:relative; z-index:1; margin-bottom:-6px; }
     .c1b-cap__name span{ font-weight:600; font-size:16px; }
     .c1b-cap__box{ background:#fffdf6; border:1.5px solid #1f5a2e; border-radius:12px; padding:14px 22px 8px; display:flex; flex-direction:column; gap:6px; }
     .c1b-cap__box div{ display:flex; align-items:center; gap:12px; font-size:17px; font-weight:600; color:#1c2530; white-space:nowrap; }
     .c1b-ico{ width:26px; height:26px; fill:#1f5a2e; flex:0 0 26px; }
+    .c1b-cmp{ position:absolute; left:4.5%; right:4.5%; bottom:58px; z-index:3; background:rgba(255,253,246,.94); border:2px solid #1f5a2e; border-radius:18px; padding:36px 26px 18px; font-family:'DM Sans',Arial,sans-serif; }
+    .c1b-cmp__title{ position:absolute; left:50%; top:0; transform:translate(-50%,-50%); background:#1f5a2e; color:#fff; font-weight:700; letter-spacing:2.5px; font-size:20px; padding:7px 38px; border-radius:999px; white-space:nowrap; }
+    .c1b-cmp__grid{ display:grid; grid-template-columns:1fr 1.15fr 1.15fr .9fr; gap:8px 10px; }
+    .c1b-cmp__h{ text-align:center; font-weight:700; font-size:19px; padding:8px 0; border-radius:12px 12px 0 0; background:#1f5a2e; color:#fff; }
+    .c1b-cmp__h span{ font-weight:600; font-size:17px; }
+    .c1b-cmp__h--t{ background:#e9d39b; color:#1c2530; }
+    .c1b-cmp__lab{ display:flex; align-items:center; gap:14px; padding:10px 18px; background:#dcebd6; border-radius:6px; font-size:19px; font-weight:600; color:#1c2530; }
+    .c1b-cmp__lab .c1b-ico{ width:32px; height:32px; flex:0 0 32px; }
+    .c1b-cmp__v{ display:flex; align-items:center; justify-content:center; background:#e6f1df; border-radius:6px; font-size:22px; font-weight:700; color:#111; padding:10px 0; }
+    .c1b-cmp__v b{ color:#1a3fd6; margin-left:6px; }
+    .c1b-cmp__v--t{ background:#f6ecd0; }
+    .c1b-cmp__v--t i{ font-style:normal; font-weight:600; margin-left:6px; }
     .c1b-border{ position:absolute; left:0; right:0; bottom:0; height:34px; background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='34'><rect width='36' height='34' fill='%231f5a2e'/><rect y='5' width='36' height='2' fill='%23ffffff'/><rect y='27' width='36' height='2' fill='%23ffffff'/><path d='M0 25 L9 11 L18 25 Z M18 25 L27 11 L36 25 Z' fill='none' stroke='%23ffffff' stroke-width='2'/><path d='M6 22 L9 17 L12 22Z M24 22 L27 17 L30 22Z' fill='%23ffffff'/></svg>") repeat-x; z-index:3; }
     .c1b-border__medal{ position:absolute; left:50%; bottom:2px; transform:translateX(-50%); width:54px; height:54px; border-radius:50%; background:#fbf7ec; border:3px solid #1f5a2e; display:flex; align-items:center; justify-content:center; color:#1f5a2e; }
     .c1b-border__medal .c1b-hib{ width:40px; height:40px; }
@@ -305,8 +316,8 @@
         <div class="bc-title">Tongan Scholar Publications by Gender</div>
         <div class="bc-subtitle">Each body = 100 % of that gender&rsquo;s publications, split by type &nbsp;&middot;&nbsp; bands fill bottom-to-top</div>
 <div class="c1b-stage" id="c1b-stage">
-          <div class="c1b-leaves c1b-leaves--l" aria-hidden="true"><svg viewBox="0 0 100 120"><path d="M50 92 C30 94 4 80 3 50 C2 24 22 4 46 12 L50 20 L54 12 C78 4 98 24 97 50 C96 80 70 94 50 92Z" fill="#e7e0c7"/><g stroke="#fbf7ec" stroke-width="3.2" stroke-linecap="round" fill="none"><path d="M6 44 L40 50" /><path d="M10 26 L42 38" /><path d="M22 12 L44 30" /><path d="M10 64 L40 60" /><path d="M24 80 L44 68" /><path d="M94 44 L60 50" /><path d="M90 26 L58 38" /><path d="M78 12 L56 30" /><path d="M90 64 L60 60" /><path d="M76 80 L56 68" /><path d="M50 22 L50 88" stroke-width="2"/></g><path d="M50 90 Q51 104 47 118" stroke="#e7e0c7" stroke-width="3" fill="none"/></svg><svg viewBox="0 0 100 120"><path d="M50 92 C30 94 4 80 3 50 C2 24 22 4 46 12 L50 20 L54 12 C78 4 98 24 97 50 C96 80 70 94 50 92Z" fill="#e7e0c7"/><g stroke="#fbf7ec" stroke-width="3.2" stroke-linecap="round" fill="none"><path d="M6 44 L40 50" /><path d="M10 26 L42 38" /><path d="M22 12 L44 30" /><path d="M10 64 L40 60" /><path d="M24 80 L44 68" /><path d="M94 44 L60 50" /><path d="M90 26 L58 38" /><path d="M78 12 L56 30" /><path d="M90 64 L60 60" /><path d="M76 80 L56 68" /><path d="M50 22 L50 88" stroke-width="2"/></g><path d="M50 90 Q51 104 47 118" stroke="#e7e0c7" stroke-width="3" fill="none"/></svg><svg viewBox="0 0 100 120"><path d="M50 92 C30 94 4 80 3 50 C2 24 22 4 46 12 L50 20 L54 12 C78 4 98 24 97 50 C96 80 70 94 50 92Z" fill="#e7e0c7"/><g stroke="#fbf7ec" stroke-width="3.2" stroke-linecap="round" fill="none"><path d="M6 44 L40 50" /><path d="M10 26 L42 38" /><path d="M22 12 L44 30" /><path d="M10 64 L40 60" /><path d="M24 80 L44 68" /><path d="M94 44 L60 50" /><path d="M90 26 L58 38" /><path d="M78 12 L56 30" /><path d="M90 64 L60 60" /><path d="M76 80 L56 68" /><path d="M50 22 L50 88" stroke-width="2"/></g><path d="M50 90 Q51 104 47 118" stroke="#e7e0c7" stroke-width="3" fill="none"/></svg></div>
-          <div class="c1b-leaves c1b-leaves--r" aria-hidden="true"><svg viewBox="0 0 100 120"><path d="M50 92 C30 94 4 80 3 50 C2 24 22 4 46 12 L50 20 L54 12 C78 4 98 24 97 50 C96 80 70 94 50 92Z" fill="#e7e0c7"/><g stroke="#fbf7ec" stroke-width="3.2" stroke-linecap="round" fill="none"><path d="M6 44 L40 50" /><path d="M10 26 L42 38" /><path d="M22 12 L44 30" /><path d="M10 64 L40 60" /><path d="M24 80 L44 68" /><path d="M94 44 L60 50" /><path d="M90 26 L58 38" /><path d="M78 12 L56 30" /><path d="M90 64 L60 60" /><path d="M76 80 L56 68" /><path d="M50 22 L50 88" stroke-width="2"/></g><path d="M50 90 Q51 104 47 118" stroke="#e7e0c7" stroke-width="3" fill="none"/></svg><svg viewBox="0 0 100 120"><path d="M50 92 C30 94 4 80 3 50 C2 24 22 4 46 12 L50 20 L54 12 C78 4 98 24 97 50 C96 80 70 94 50 92Z" fill="#e7e0c7"/><g stroke="#fbf7ec" stroke-width="3.2" stroke-linecap="round" fill="none"><path d="M6 44 L40 50" /><path d="M10 26 L42 38" /><path d="M22 12 L44 30" /><path d="M10 64 L40 60" /><path d="M24 80 L44 68" /><path d="M94 44 L60 50" /><path d="M90 26 L58 38" /><path d="M78 12 L56 30" /><path d="M90 64 L60 60" /><path d="M76 80 L56 68" /><path d="M50 22 L50 88" stroke-width="2"/></g><path d="M50 90 Q51 104 47 118" stroke="#e7e0c7" stroke-width="3" fill="none"/></svg><svg viewBox="0 0 100 120"><path d="M50 92 C30 94 4 80 3 50 C2 24 22 4 46 12 L50 20 L54 12 C78 4 98 24 97 50 C96 80 70 94 50 92Z" fill="#e7e0c7"/><g stroke="#fbf7ec" stroke-width="3.2" stroke-linecap="round" fill="none"><path d="M6 44 L40 50" /><path d="M10 26 L42 38" /><path d="M22 12 L44 30" /><path d="M10 64 L40 60" /><path d="M24 80 L44 68" /><path d="M94 44 L60 50" /><path d="M90 26 L58 38" /><path d="M78 12 L56 30" /><path d="M90 64 L60 60" /><path d="M76 80 L56 68" /><path d="M50 22 L50 88" stroke-width="2"/></g><path d="M50 90 Q51 104 47 118" stroke="#e7e0c7" stroke-width="3" fill="none"/></svg></div>
+          <img class="c1b-leaves c1b-leaves--l" src="img/tonga-c1b-monstera-l.webp" alt="" aria-hidden="true">
+          <img class="c1b-leaves c1b-leaves--r" src="img/tonga-c1b-monstera-r.webp" alt="" aria-hidden="true">
           <div id="chart"></div>
           <div class="c1b-center">
             <div class="c1b-title"><span data-c1b="scholars">—</span> Tongan<br>Scholars</div>
@@ -321,8 +332,13 @@
               </div>
             </div>
           </div>
-          <div class="c1b-cap c1b-cap--l"><div class="c1b-cap__name">Tangata <span>(Male)</span></div><div class="c1b-cap__box"><div><svg viewBox="0 0 24 24" class="c1b-ico"><circle cx="12" cy="7" r="3.4"/><circle cx="5" cy="9" r="2.6"/><circle cx="19" cy="9" r="2.6"/><path d="M5.5 20c0-4 3-6.5 6.5-6.5s6.5 2.5 6.5 6.5z"/><path d="M0.5 19c0-3 2-5 4.6-5 1 0 1.8.3 2.4.7-1.6 1.2-2.6 2.6-2.8 4.3z"/><path d="M23.5 19c0-3-2-5-4.6-5-1 0-1.8.3-2.4.7 1.6 1.2 2.6 2.6 2.8 4.3z"/></svg><span data-c1b="l-sch">—</span></div><div><svg viewBox="0 0 24 24" class="c1b-ico"><path d="M2 5c3-1 6.5-1 9 1v14c-2.5-2-6-2-9-1z"/><path d="M22 5c-3-1-6.5-1-9 1v14c2.5-2 6-2 9-1z"/></svg><span data-c1b="l-pub">—</span></div></div></div>
-          <div class="c1b-cap c1b-cap--r"><div class="c1b-cap__name">Fefine <span>(Female)</span></div><div class="c1b-cap__box"><div><svg viewBox="0 0 24 24" class="c1b-ico"><circle cx="12" cy="7" r="3.4"/><circle cx="5" cy="9" r="2.6"/><circle cx="19" cy="9" r="2.6"/><path d="M5.5 20c0-4 3-6.5 6.5-6.5s6.5 2.5 6.5 6.5z"/><path d="M0.5 19c0-3 2-5 4.6-5 1 0 1.8.3 2.4.7-1.6 1.2-2.6 2.6-2.8 4.3z"/><path d="M23.5 19c0-3-2-5-4.6-5-1 0-1.8.3-2.4.7 1.6 1.2 2.6 2.6 2.8 4.3z"/></svg><span data-c1b="r-sch">—</span></div><div><svg viewBox="0 0 24 24" class="c1b-ico"><path d="M2 5c3-1 6.5-1 9 1v14c-2.5-2-6-2-9-1z"/><path d="M22 5c-3-1-6.5-1-9 1v14c2.5-2 6-2 9-1z"/></svg><span data-c1b="r-pub">—</span></div></div></div>
+          <div class="c1b-cap c1b-cap--l"><div class="c1b-cap__name">Tangata <span>(Male)</span></div></div>
+          <div class="c1b-cap c1b-cap--r"><div class="c1b-cap__name">Fefine <span>(Female)</span></div></div>
+          <div class="c1b-cmp"><div class="c1b-cmp__title">GENDERED COMPARISON</div><div class="c1b-cmp__grid">
+            <div></div><div class="c1b-cmp__h">Tangata <span>(Male)</span></div><div class="c1b-cmp__h">Fefine <span>(Female)</span></div><div class="c1b-cmp__h c1b-cmp__h--t">Total</div>
+            <div class="c1b-cmp__lab"><svg viewBox="0 0 24 24" class="c1b-ico"><circle cx="12" cy="7" r="3.4"/><circle cx="5" cy="9" r="2.6"/><circle cx="19" cy="9" r="2.6"/><path d="M5.5 20c0-4 3-6.5 6.5-6.5s6.5 2.5 6.5 6.5z"/><path d="M0.5 19c0-3 2-5 4.6-5 1 0 1.8.3 2.4.7-1.6 1.2-2.6 2.6-2.8 4.3z"/><path d="M23.5 19c0-3-2-5-4.6-5-1 0-1.8.3-2.4.7 1.6 1.2 2.6 2.6 2.8 4.3z"/></svg>Scholars</div><div class="c1b-cmp__v" data-c1b="l-sch">—</div><div class="c1b-cmp__v" data-c1b="r-sch">—</div><div class="c1b-cmp__v c1b-cmp__v--t" data-c1b="t-sch">—</div>
+            <div class="c1b-cmp__lab"><svg viewBox="0 0 24 24" class="c1b-ico"><path d="M2 5c3-1 6.5-1 9 1v14c-2.5-2-6-2-9-1z"/><path d="M22 5c-3-1-6.5-1-9 1v14c2.5-2 6-2 9-1z"/></svg>Publications</div><div class="c1b-cmp__v" data-c1b="l-pub">—</div><div class="c1b-cmp__v" data-c1b="r-pub">—</div><div class="c1b-cmp__v c1b-cmp__v--t" data-c1b="t-pub">—</div>
+          </div></div>
           <div class="c1b-border" aria-hidden="true"><span class="c1b-border__medal"><svg viewBox="0 0 40 40" class="c1b-hib"><g transform="translate(20 20)"><ellipse rx="7.5" ry="10.5" cy="-9" transform="rotate(0)" fill="currentColor"/><ellipse rx="7.5" ry="10.5" cy="-9" transform="rotate(72)" fill="currentColor"/><ellipse rx="7.5" ry="10.5" cy="-9" transform="rotate(144)" fill="currentColor"/><ellipse rx="7.5" ry="10.5" cy="-9" transform="rotate(216)" fill="currentColor"/><ellipse rx="7.5" ry="10.5" cy="-9" transform="rotate(288)" fill="currentColor"/><circle r="3.4" fill="#fff5c8"/><path d="M0 0 L7 -13" stroke="#fff5c8" stroke-width="1.4"/><circle cx="7.5" cy="-14" r="1.8" fill="#fff5c8"/></g></svg></span></div>
         </div>
         <div class="caption" id="cap">Source: Tongan Scholarly Research Database.</div>
@@ -544,7 +560,7 @@ function setMsg(text, kind){
 
 /* Build the ECharts option from a {Woman:{...}, Man:{...}} data object.
    Each gender's five counts are converted to a % of that gender's total. */
-const C1B_GRID_TOP = -64, C1B_GRID_BOTTOM = 178;
+const C1B_GRID_TOP = -64, C1B_GRID_BOTTOM = 366;
 function buildOption(data){
   // Master-file mode renders Turaga (Man) LEFT, Marama (Woman) RIGHT
   // to match Ron's reference figure; V1 keeps Woman-left/Man-right.
@@ -579,7 +595,7 @@ function buildOption(data){
   //   * fullscreen (≥ 1400px):            BODY_W = 260
   //   * in between:                        linear interpolation
   const chartW = (chartDom && chartDom.clientWidth) || 1160;
-  const chartH = (chartDom && chartDom.clientHeight) || 800;
+  const chartH = (chartDom && chartDom.clientHeight) || 980;
   const BODY_W = Math.round((chartH - C1B_GRID_BOTTOM - C1B_GRID_TOP) * 0.86 * 150/521);
   const __unusedW = (function(){
     if (chartW <= 900)  return 150;
@@ -867,11 +883,14 @@ function c1bFill(data){
   const set = (k,v) => { const el=document.querySelector('[data-c1b="'+k+'"]'); if(el) el.textContent=v; };
   set("scholars", known ? fmt(sch) : "—");
   set("pubs", pubs ? fmt(pubs) : "—");
+  const setH = (k,h) => { const el=document.querySelector('[data-c1b="'+k+'"]'); if(el) el.innerHTML=h; };
   [["l","Man"],["r","Woman"]].forEach(([side,k])=>{
     const sc = g(k).scholars, p = pubsOf(g(k));
-    set(side+"-sch", sc==null ? "— scholars" : fmt(sc)+" scholars"+(sch>0?" ("+pct(Number(sc)/sch*100)+")":""));
-    set(side+"-pub", fmt(p)+" publications"+(pubs>0?" ("+pct(p/pubs*100)+")":""));
+    setH(side+"-sch", sc==null ? "—" : fmt(sc)+(sch>0?"<b>("+pct(Number(sc)/sch*100)+")</b>":""));
+    setH(side+"-pub", fmt(p)+(pubs>0?"<b>("+pct(p/pubs*100)+")</b>":""));
   });
+  setH("t-sch", known ? fmt(sch)+"<i>(100%)</i>" : "—");
+  setH("t-pub", pubs ? fmt(pubs)+"<i>(100%)</i>" : "—");
   const ul = document.getElementById("c1b-legend");
   if (ul) ul.innerHTML = LEGEND_ORDER.map(k=>{ const t=TYPES.find(x=>x.key===k);
     return '<li><span class="dot" style="background:'+t.color+'"></span><span>'+t.label+' (<b>'+(pubs?pct(tot[k]/pubs*100):"—")+'</b> | '+fmt(tot[k])+')</span></li>'; }).join("");
