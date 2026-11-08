@@ -940,13 +940,13 @@ function c1bFill(data){
   [["l","Man"],["r","Woman"]].forEach(([side,k])=>{
     const sc = g(k).scholars, p = pubsOf(g(k));
     setH(side+"-sch", sc==null ? "—" : fmt(sc)+(sch>0?"<b>("+pct(Number(sc)/sch*100)+")</b>":""));
-    setH(side+"-pub", fmt(p)+(pubs>0?"<b>("+pct(p/pubs*100)+")</b>":""));
+    setH(side+"-pub", !pubs ? "—" : fmt(p)+(pubs>0?"<b>("+pct(p/pubs*100)+")</b>":""));
   });
   setH("t-sch", known ? fmt(sch)+"<i>(100%)</i>" : "—");
   setH("t-pub", pubs ? fmt(pubs)+"<i>(100%)</i>" : "—");
   const ul = document.getElementById("c1b-legend");
   if (ul) ul.innerHTML = LEGEND_ORDER.map(k=>{ const t=TYPES.find(x=>x.key===k);
-    return '<li><span class="dot" style="background:'+t.color+'"></span><span>'+t.label+' (<b>'+(pubs?pct(tot[k]/pubs*100):"—")+'</b> | '+fmt(tot[k])+')</span></li>'; }).join("");
+    return '<li><span class="dot" style="background:'+t.color+'"></span><span>'+t.label+' (<b>'+(pubs?pct(tot[k]/pubs*100):"—")+'</b> | '+(pubs?fmt(tot[k]):"—")+')</span></li>'; }).join("");
   const el = document.getElementById("c1b-donut"); if(!el || !window.echarts) return;
   if(!c1bDonut) c1bDonut = echarts.init(el, null, { renderer:"canvas" });
   c1bDonut.setOption({
@@ -956,7 +956,7 @@ function c1bFill(data){
       itemStyle:{ borderColor:"#fffdf6", borderWidth:2 },
       label:{ show:true, position:"inside", formatter:p=> p.percent>=3 ? pct(p.percent) : "", color:"#fff", fontFamily:"'DM Sans',Arial,sans-serif", fontWeight:700, fontSize:Math.round(26*(window.__c1bK||1)), textBorderColor:"rgba(0,0,0,.25)", textBorderWidth:2 },
       labelLine:{ show:false }, emphasis:{ scale:true, scaleSize:4 },
-      data: LEGEND_ORDER.map(k=>{ const t=TYPES.find(x=>x.key===k); return { name:t.label, value:tot[k], itemStyle:{ color:t.color } }; }) }]
+      data: !pubs ? [] : LEGEND_ORDER.map(k=>{ const t=TYPES.find(x=>x.key===k); return { name:t.label, value:tot[k], itemStyle:{ color:t.color } }; }) }]
   }, true);
 }
 window.addEventListener("resize", ()=>{ try{ c1bDonut && c1bDonut.resize(); }catch(e){} });
