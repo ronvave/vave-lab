@@ -1133,11 +1133,18 @@
       recent: (a, b) => { const y = s => Math.max(0, ...(s.r[k].u || []).map(u => +(u[2] && s.r[k].cur ? 9999 : (u[4] || u[3] || 0)))); return y(b) - y(a) || a.n.localeCompare(b.n); } };
     return L.sort(by[CL.sort] || by.cur);
   }
+  // Institution country code as a coloured pill, same palette as Fiji Panel D List view.
+  const CC_PILL = { USA: ['#F6BB1F', '#1a1206'], NZL: ['#1E8AE0', '#fff'], AUS: ['#F07A3A', '#1a0b04'], GBR: ['#6A47C9', '#fff'], FJI: ['#3BB273', '#04140b'], CAN: ['#E0393E', '#fff'], PNG: ['#8B4A22', '#fff'], MLT: ['#8FA3BF', '#0b1626'], FRA: ['#4F6BED', '#fff'], SLB: ['#0F9AA8', '#fff'] };
+  function ccPill(c) {
+    const k = String(c).toUpperCase(); let bg, fg; const v = CC_PILL[k];
+    if (v) [bg, fg] = v; else { let h = 0; for (let i = 0; i < k.length; i++) h = (h * 31 + k.charCodeAt(i)) % 360; bg = `hsl(${h},55%,62%)`; fg = '#0b1626'; }
+    return `<span class="ps-cl-cc" style="background:${bg};color:${fg}" title="${esc(nameOf(k) || k)}">${esc(k)}</span>`;
+  }
   function clRowHtml(s, k, DM) {
     const e = s.r[k], U = roleUnis(e, CL.held), yrs = roleYears(e, U), d = DM.get(s.id);
     const name = d ? `<a href="#dir=${esc(s.id)}" title="Open this scholar's card in the Regional Scholar Directory">${esc(s.n)}</a>` : esc(s.n);
     const place = d && d.geo ? `<div class="ps-cl-place">${esc(d.geo)}</div>` : '';
-    const uni = U.length ? `<div class="ps-cl-uni">${U.map(u => `${esc(u[0])}${u[1] ? ` <b>(${esc(u[1])})</b>` : ''}`).join('; ')}</div>` : '<div class="ps-cl-uni ps-cl-uni--na">Institution not recorded</div>';
+    const uni = U.length ? `<div class="ps-cl-uni">${U.map(u => `${esc(u[0])}${u[1] ? ` ${ccPill(u[1])}` : ''}`).join('; ')}</div>` : '<div class="ps-cl-uni ps-cl-uni--na">Institution not recorded</div>';
     const ph = (window.PSDirectory && window.PSDirectory.photoById && window.PSDirectory.photoById(s.id)) || '';
     const ini = s.n.replace(/\([^)]*\)/g, ' ').replace(/[‘’ʻ'`]/g, '').split(/\s+/).filter(w => /^[A-Za-zÀ-ž]/.test(w)).map(w => w[0].toUpperCase());
     const photo = `<div class="ps-cl-ph" aria-hidden="true"><span>${esc((ini[0] || '') + (ini.length > 1 ? ini[ini.length - 1] : ''))}</span>${ph ? `<img src="${esc(ph)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ''}</div>`;
