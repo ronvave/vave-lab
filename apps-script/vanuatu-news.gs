@@ -252,6 +252,15 @@ function resolveVanuatuNews(payload) {
     qs.getRange(o._row, VAN_NEWS_QUEUE_HEADERS.indexOf('Reviewed By') + 1, 1, 4).setValues([[actor.email, when, note, newsId].map(vanNewsLiteral_)]);
     Sheets.Spreadsheets.batchUpdate({ requests: [audit] }, VAN_SHEET_);
     o.Status = status; o['Reviewed By'] = actor.email; o['Reviewed At'] = when; o['Decision Notes'] = note; o['News ID'] = newsId; delete o._row;
-    return { status: 'ok', row: o, newsId: newsId };
+    var result = { status: 'ok', row: o, newsId: newsId };
   } finally { lock.releaseLock(); }
+  // An approved story only reaches Panel A3 through the next Vanuatu snapshot, so queue
+  // one now. The row is already saved; a failed dispatch is reported, never rolled back.
+  if (decision === 'approve') result.refresh = vanNewsQueueRefresh_();
+  return result;
+}
+function vanNewsQueueRefresh_() {
+  if (typeof dispatchMasterRefreshFromServer_ !== 'function') return { ok: false, message: 'Vanuatu refresh helper is missing; run the refresh manually.' };
+  var r = dispatchMasterRefreshFromServer_();
+  return r && r.ok ? { ok: true, message: 'Vanuatu snapshot refresh queued.' } : { ok: false, message: (r && r.message) || 'Vanuatu refresh could not be queued; run the refresh manually.' };
 }
