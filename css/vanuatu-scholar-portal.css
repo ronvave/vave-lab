@@ -80,3 +80,16 @@ dialog.vanuatu-form::backdrop{background:rgba(6,47,53,.55)}
 .vanuatu-form .vanuatu-add-degree{justify-self:start;background:#eef6f6;color:#075565;border:1px solid #8ab3b9;font-weight:600}
 /* Summary panels match the dashboard panel width so the tiles are the same size. */
 .vanuatu-summary{margin-left:calc(50% - 536px)!important;margin-right:calc(50% - 536px)!important;padding:16px 20px!important;}
+
+/* Shared profile link: pre-launch box and publications heading on a light (30%) Vanuatu textile,
+   with black text and dark-teal bold phrases and links, matching the Tonga, Samoa and Fiji shared links. */
+.vanuatu-portal .vanuatu-portal-intro{background:linear-gradient(rgba(251,248,242,.70),rgba(251,248,242,.70)),url("../img/vanuatu/textile-background.webp") center top / 1400px auto repeat!important}
+.vanuatu-portal .vanuatu-portal-intro,.vanuatu-portal .vanuatu-portal-intro p,.vanuatu-portal .vanuatu-portal-intro h2,.vanuatu-portal .vanuatu-portal-intro h3{color:#111!important}
+.vanuatu-portal .vanuatu-portal-intro :is(strong,b,a[href]){color:#0b4f5c!important}
+.vanuatu-portal .vanuatu-portal-intro .direct-review-callout,.vanuatu-portal .vanuatu-portal-intro .direct-review-callout :is(strong,b){color:#4b3a00!important}
+.vanuatu-portal .vanuatu-portal-intro .direct-review-badge{color:#9a6500!important}
+.vanuatu-portal .vanuatu-portal-intro strong.scholar-geotag-highlight{color:#111!important}
+/* Shared profile link: grey-ish text set to black (light theme only). */
+html:not([data-theme="dark"]) .vanuatu-portal{--color-text:#111;--color-text-muted:#111;--color-text-faint:#111}
+html:not([data-theme="dark"]) .vanuatu-portal :is(.db-scholar-card__updated em,.sct-sub,.sct-meta,.db-item__meta em){color:#111!important}
+html:not([data-theme="dark"]) .vanuatu-portal :is(.vanuatu-summary-heading,.vanuatu-geography-list :is(legend,label,p:not([class]),label span,button:not([type="submit"])),.vanuatu-geo-submit :is(h3,p,legend,label,.vanuatu-geo-dirty-count)){color:#111!important}

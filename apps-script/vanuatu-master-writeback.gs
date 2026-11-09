@@ -48,7 +48,7 @@ function vanData_(name){
  return {sheet:sheet,headers:headers,records:records,key:key};
 }
 function vanRecord_(d,id){var matches=d.records.filter(function(r){return r.value[d.key]===id;});if(matches.length!==1)throw Error('Entity ID is missing or ambiguous: '+id);return matches[0];}
-function doGet(){return vanJson_({service:'Vanuatu Admin',version:2,authentication:'Owner credential required for all data operations.'});}
+function doGet(e){if(e&&e.parameter&&e.parameter.action==='submissionCapabilities')return vanJson_(vanPublicCapabilities_());return vanJson_({service:'Vanuatu Admin',version:2,authentication:'Owner credential required for all data operations.'});}
 function getVanuatuAdminState(){
  var actor=vanActor_(false),tables={};
  ['Scholars','Graduate Degrees','Positions','Publications','Authorship','Review Queue','Scholar Profile Submissions','Publication Geography Submissions','Change Log'].forEach(function(name){
@@ -149,6 +149,11 @@ function doPost(e) {
     if(request.action==='submitNewsStory'){
       try{return vanJson_(vanNewsSubmit_(request));}
       catch(err){return vanJson_({status:'error',reason:'The link could not be sent. Please try again later.'});}
+    }
+    // Public shared-profile forms (see vanuatu-public-submissions.gs): no secret; private review queues only.
+    if(request.action==='submitScholarProfileUpdate'||request.action==='submitPublicationGeography'){
+      try{return vanJson_(vanPublicSubmit_(request));}
+      catch(err){return vanJson_({status:'error',reason:'The submission could not be saved. Please try again later.'});}
     }
     var expected=props.getProperty('SHARED_SECRET')||'',received=String(request.secret||'');
     var diff=expected.length^received.length;
