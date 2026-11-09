@@ -163,10 +163,10 @@
     });
     var group = [];
     Object.keys(routes).forEach(function (k, i) {
-      var r = routes[k], A = r.a.ll, B = r.b.ll, bl = B.lng;
-      // Take the shorter way round (e.g. Fiji ↔ Hawaiʻi across 180°).
-      [bl - 360, bl + 360].forEach(function (c) { if (Math.abs(c - A.lng) < Math.abs(bl - A.lng)) bl = c; });
-      var pts = curvePoints(map, A, L.latLng(B.lat, bl));
+      var r = routes[k], A = r.a.ll, B = r.b.ll;
+      // Always join the two circles exactly where they are drawn, so every
+      // line ends on a visible university marker (no wrapped copies).
+      var pts = curvePoints(map, A, B);
       var color = colorFor(r.b.p.region), n = r.people.length;
       var w = Math.min(9, 1.6 + 1.3 * n);
       var line = L.polyline(pts, { renderer: renderer, pane: 'b2PathLines', color: color, weight: w, opacity: 0.6, lineCap: 'round', interactive: true });
