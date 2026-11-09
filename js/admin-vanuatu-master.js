@@ -1557,8 +1557,9 @@
         const summary=insights.summaryFormat==='html'?temp.content.textContent:insights.summaryHtml||'';
         const changes={photo:document.getElementById('pf-photo').value,summary,keywords:insights.keywords||[],sources:insights.sources||[],sector:document.getElementById('pf-sector').value,institutionUrl:document.getElementById('pf-institution-url').value,departmentUrl:document.getElementById('pf-department-url').value};
         const changed=Object.entries(changes).some(([k,v])=>JSON.stringify(v)!==JSON.stringify(old[k]??(Array.isArray(v)?[]:'')));
-        if(changed)await window.VanuatuBundle.rpc('saveVanuatuEnrichment',{scholarId:sid,expectedVersion:old._version||'',...changes,reason:'Explicitly saved in Vanuatu owner Admin',operationId:crypto.randomUUID()});
-        await window.VanuatuBundle.nativeState();await loadEverything();renderKpi();renderScholars();
+        // Re-read the Master only when enrichment was saved here; a Master write has already re-read it.
+        if(changed){await window.VanuatuBundle.rpc('saveVanuatuEnrichment',{scholarId:sid,expectedVersion:old._version||'',...changes,reason:'Explicitly saved in Vanuatu owner Admin',operationId:crypto.randomUUID()});await window.VanuatuBundle.nativeState();}
+        await loadEverything();renderKpi();renderScholars();
         if(!opts?.keepModalOpen)closeEditModal();let message='Saved to Vanuatu Master / enrichment.';try{await window.VanuatuBundle.rpc('refreshVanuatuSnapshot');message+=' Dashboard refresh queued.';}catch(e){message+=' Dashboard refresh failed: '+e.message;}toast(message,'ok',9000);
       } catch(e){toast('Master edits may already be saved; supplementary save: '+e.message,'error');}
       return;
