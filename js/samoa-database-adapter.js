@@ -1515,6 +1515,39 @@
       });
     }
 
+    // Map-location fallback (added 10 Nov 2026). The Samoa Master Lookups
+    // sheet has no coordinates for these universities, so they reuse the
+    // public institution points already shown on the Fiji study map.
+    // Fills only missing lat/lng; never changes scholars, degrees or counts.
+    var SAMOA_B2_LOCATION_FALLBACK = {
+      "Australia|Australian National University": [-35.2777, 149.1185],
+      "Australia|Griffith University": [-27.558, 153.051],
+      "Australia|Macquarie University": [-33.7738, 151.1126],
+      "Australia|Monash University": [-37.9105, 145.1362],
+      "Australia|University of Canberra": [-35.2378, 149.0842],
+      "Australia|University of New South Wales": [-33.9173, 151.2313],
+      "Australia|University of Queensland": [-27.4975, 153.0137],
+      "Australia|University of South Australia": [-37.8062142, 140.766463],
+      "Australia|University of Sydney": [-33.8886, 151.187],
+      "Canada|University of British Columbia": [49.26114, -123.24686],
+      "Fiji|Pasifika Communities University": [-18.1583, 178.4356],
+      "New Zealand|Auckland University of Technology": [-36.8485, 174.7633],
+      "New Zealand|Massey University": [-40.3856, 175.6167],
+      "New Zealand|University of Auckland": [-36.8523, 174.7691],
+      "New Zealand|University of Canterbury": [-43.5231, 172.5828],
+      "New Zealand|University of Otago": [-45.8641, 170.514],
+      "New Zealand|University of Waikato": [-37.7871, 175.3169],
+      "New Zealand|Victoria University of Wellington": [-41.29, 174.7681],
+      "United Kingdom|University of London": [51.5215, -0.129],
+      "United States|University of Hawaiʻi at Mānoa": [21.2969, -157.8171],
+      "United States|University of Washington": [47.6062, -122.3321]
+    };
+    worldPoints.forEach(function (pt) {
+      if (typeof pt.lat === 'number' && typeof pt.lng === 'number') return;
+      var loc = SAMOA_B2_LOCATION_FALLBACK[(pt.country || '') + '|' + (pt.university || '')];
+      if (loc) { pt.lat = loc[0]; pt.lng = loc[1]; }
+    });
+
     return { scholars: scholarsMap, worldPoints: worldPoints, universities: [] };
   }
 

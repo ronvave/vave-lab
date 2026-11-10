@@ -1538,7 +1538,15 @@
   "United Kingdom|University of Reading": [
     51.442,
     -0.945
-  ]
+  ],
+  // Added 10 Nov 2026: Fiji map lookup (Tohoku, Kagoshima, Pingtung),
+  // Regional lookup (Yang Ming Chiao Tung), OpenStreetMap Nominatim (Mie, Pukyong).
+  "Japan|Tohoku University": [38.256, 140.842],
+  "Japan|Kagoshima University": [31.5716, 130.5441],
+  "Japan|Mie University": [34.7435, 136.5241],
+  "South Korea|Pukyong National University": [35.1343, 129.1052],
+  "Taiwan|National Yang Ming Chiao Tung University": [24.7868, 120.9972],
+  "Taiwan|National Pingtung University of Science and Technology": [22.6572, 120.6197]
 };
     var countryLocations = {"Australia": [-25, 134], "Canada": [56, -106], "Fiji": [-18, 178], "Ireland": [53, -8], "New Zealand": [-41, 174], "Norway": [61, 8], "Singapore": [1.35, 103.82], "Solomon Islands": [-9.6, 160.2], "Trinidad and Tobago": [10.5, -61.3], "United Kingdom": [54, -2], "United States": [39, -98]};
     var wpByKey = new Map();
