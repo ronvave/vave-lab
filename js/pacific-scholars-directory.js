@@ -97,7 +97,7 @@
   function hay(s) {
     if (s._h) return s._h;
     const L = LOCAL[s.c];
-    const parts = [s.sal, s.n, C[s.c].name, s.inst, s.dept, s.role, s.geo, L && s.loc ? L.fmt(s.loc) : '', s.fld, ...(s.s || []), ...(s.p || []).map(i => P[i].ti), ...((X[s.id] || {}).kw || [])];
+    const parts = [s.sal, s.n, C[s.c].name, s.inst, s.dept, s.role, s.geo, L && s.loc ? L.fmt(s.loc) : '', s.fld, ...(s.s || []), ...(s.p || []).map(i => P[i].ti), ...(s.p || []).map(i => P[i].k), ...((X[s.id] || {}).kw || [])];
     return (s._h = fold(parts.filter(Boolean).join(' ')));
   }
   function match(s) {
@@ -268,6 +268,11 @@
     q('count').textContent = `Showing ${from.toLocaleString()}\u2013${to.toLocaleString()} of ${shown.length.toLocaleString()} matching scholars \u00b7 ${S.length.toLocaleString()} in the directory`;
     renderPager(pages);
     for (const k of Object.keys(MENUS)) syncMenu(k);
+    // Panel E follows a Panel D word search: it lists the matching scholars'
+    // publications that themselves mention the words (Ron 2026-11-25).
+    if (window.PSPublications && window.PSPublications.follow) {
+      try { window.PSPublications.follow(F.q && !F.only ? { q: F.q, ids: shown.map(s => s.id) } : null); } catch (e) { console.error(e); }
+    }
   }
 
   // Page-number pager, same layout as the Fiji dashboard:

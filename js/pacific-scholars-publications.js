@@ -12,6 +12,8 @@
   let root, items = [], shown = [], page = 1, TYPE = {}, C = {}, order = [];
   const F = { q: '', type: '', country: '', disc: '', decade: '', fa: '' };
   let SORT = 'new';
+  // Panel D link: { q, words, ids:Set } while Panel E follows a Panel D word search.
+  let LINK = null, released = '';
   const NOW_Y = new Date().getFullYear();
   // Forthcoming: a year after the current one, or "forthcoming" / "in press" in the record.
   const isForth = (p, yr) => (yr && yr > NOW_Y) || /\b(forthcoming|in press)\b/i.test([p.ti, p.j, p.pb].join(' '));
@@ -42,7 +44,7 @@
       const type = TYPE[p.t] ? p.t : 'other';
       return {
         i, p, type, yr, journal, authors, cs, disc, sch, first: by[i].first, link: linkOf(p), forth: isForth(p, yr),
-        key: fold([p.ti, authors, journal, p.pb, sch.map(s => s.n).join(' ')].join(' '))
+        key: fold([p.ti, authors, journal, p.pb, sch.map(s => s.n).join(' '), p.k || ''].join(' '))
       };
     });
     // Other outputs are excluded, matching the scholar cards and country dashboards.
@@ -51,6 +53,10 @@
   }
 
   function match(it) {
+    if (LINK) {
+      if (!it.sch.some(x => LINK.ids.has(x.id))) return false;
+      if (!LINK.words.every(w => it.key.includes(w))) return false;
+    }
     if (F.type && it.type !== F.type) return false;
     if (F.country && !it.cs.includes(F.country)) return false;
     if (F.disc && !it.disc.includes(F.disc)) return false;
@@ -174,10 +180,40 @@
       const head = SORT !== 'title' && it.forth && (!prev || !prev.forth) ? `<h3 class="pub-group">Forthcoming or in press (${nF.toLocaleString()})</h3>` : '';
       return head + item(it);
     }).join('') : '<div class="pub-empty">No publications match these filters. Try removing one.</div>';
-    const filtered = Object.values(F).some(Boolean);
+    const filtered = Object.values(F).some(Boolean) || !!LINK;
+    renderLink();
     q('count').textContent = filtered ? `Matching items (${shown.length.toLocaleString()} of ${items.length.toLocaleString()})` : `All items (${items.length.toLocaleString()})`;
     q('clear').hidden = !filtered;
     renderPager(pages);
+  }
+
+  function renderLink() {
+    let el = q('link');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'psp-link'; el.className = 'pub-follow'; el.setAttribute('role', 'status');
+      q('list').parentNode.insertBefore(el, q('list'));
+      el.addEventListener('click', e => { if (e.target.closest('[data-unlink]')) unlink(); });
+    }
+    if (!LINK) { el.hidden = true; el.innerHTML = ''; return; }
+    const by = new Set(); shown.forEach(it => it.sch.forEach(x => { if (LINK.ids.has(x.id)) by.add(x.id); }));
+    const none = LINK.ids.size - by.size;
+    const pl = (n, w) => `${n.toLocaleString()} ${w}${n === 1 ? '' : 's'}`;
+    el.hidden = false;
+    el.innerHTML = `<span class="pub-follow__txt"><b>Following the Panel D search \u201c${esc(LINK.q)}\u201d:</b> ${pl(shown.length, 'publication')} by ${pl(by.size, 'matching scholar')} that mention it in the title, journal, authors or abstract.${none > 0 ? ` ${pl(none, 'matching scholar')} ${none === 1 ? 'has' : 'have'} no publication that mentions it (matched on research keywords or profile).` : ''}</span><button type="button" class="pub-follow__btn" data-unlink>Unlink from Panel D</button>`;
+  }
+  function unlink() { if (!LINK) return; released = LINK.q; LINK = null; render(); }
+  // Called by the directory (Panel D) after every render.
+  function follow(o) {
+    if (!items.length) return;
+    if (!o || !String(o.q || '').trim()) { released = ''; if (LINK) { LINK = null; render(); } return; }
+    const qq = String(o.q).trim();
+    if (released && released === qq) return;  // user unlinked this search
+    released = '';
+    const words = fold(qq).split(/\s+/).filter(Boolean).map(w => w.replace(/"/g, ''));
+    const ids = new Set(o.ids || []);
+    if (LINK && LINK.q === qq && LINK.ids.size === ids.size && [...ids].every(x => LINK.ids.has(x))) return;
+    LINK = { q: qq, words, ids };
+    render();
   }
 
   function renderPager(pages) {
@@ -208,8 +244,8 @@
     q('f-decade').innerHTML = '<option value="">All decades</option>' + decs.filter(d => items.some(it => it.yr && !it.forth && Math.floor(it.yr / 10) * 10 === d)).map(d => `<option value="${d}">${d}s</option>`).join('') + (nF ? `<option value="forth">Forthcoming or in press (${nF})</option>` : '') + (nN ? `<option value="none">Year not recorded (${nN})</option>` : '');
     if (q('sort')) q('sort').addEventListener('change', e => { SORT = e.target.value; render(); });
     const ids = { q: 'q', type: 'f-type', country: 'f-country', disc: 'f-disc', decade: 'f-decade', fa: 'f-fa' };
-    for (const [k, id] of Object.entries(ids)) q(id).addEventListener(k === 'q' ? 'input' : 'change', e => { F[k] = e.target.value.trim(); render(); });
-    q('clear').addEventListener('click', () => { for (const [k, id] of Object.entries(ids)) { F[k] = ''; q(id).value = ''; } render(); });
+    for (const [k, id] of Object.entries(ids)) q(id).addEventListener(k === 'q' ? 'input' : 'change', e => { F[k] = e.target.value.trim(); if (k === 'q' && LINK) { released = LINK.q; LINK = null; } render(); });
+    q('clear').addEventListener('click', () => { for (const [k, id] of Object.entries(ids)) { F[k] = ''; q(id).value = ''; } if (LINK) { released = LINK.q; LINK = null; } render(); });
     q('pager').addEventListener('click', e => {
       const b = e.target.closest('[data-page]'); if (!b || b.disabled) return;
       page = +b.dataset.page; render(true);
@@ -235,5 +271,5 @@
     render();
     document.dispatchEvent(new CustomEvent('ps:pubs-ready'));
   }
-  window.PSPublications = { init, items: () => items, TYPE: () => TYPE, isReady: () => items.length > 0 };
+  window.PSPublications = { init, follow, items: () => items, TYPE: () => TYPE, isReady: () => items.length > 0 };
 })();

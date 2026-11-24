@@ -14,6 +14,12 @@
 #ps-pubs .pub-clear { padding: 9px 14px; border-radius: 8px; border: 1px solid #ccc9c4; background: #fff; font: inherit; font-size: .9rem; font-weight: 600; color: #1e2028; cursor: pointer; }
 #ps-pubs .pub-clear:hover { border-color: #005f6b; color: #005f6b; }
 #ps-pubs .pub-clear[hidden] { display: none; }
+#ps-pubs .pub-follow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 0 0 14px; padding: 12px 16px; border: 1px solid #9fc9cf; border-left: 5px solid #005f6b; border-radius: 8px; background: #eef6f7; color: #1e2028; font-size: .92rem; line-height: 1.45; }
+#ps-pubs .pub-follow[hidden] { display: none; }
+#ps-pubs .pub-follow__txt { flex: 1 1 420px; }
+#ps-pubs .pub-follow__btn { padding: 7px 12px; border-radius: 8px; border: 1px solid #005f6b; background: #fff; font: inherit; font-size: .88rem; font-weight: 600; color: #005f6b; cursor: pointer; }
+#ps-pubs .pub-follow__btn:hover { background: #005f6b; color: #fff; }
+#ps-pubs .pub-follow__btn:focus-visible { outline: 2px solid #005f6b; outline-offset: 1px; }
 #ps-pubs .pub-list { display: flex; flex-direction: column; gap: 10px; }
 #ps-pubs .pub { background: #f8f7f4; border: 1px solid #ddd9d2; border-left: 4px solid var(--pub-c); border-radius: 8px; padding: 12px 14px 12px 12px; }
 #ps-pubs .pub__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }

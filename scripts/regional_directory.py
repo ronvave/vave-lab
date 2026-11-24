@@ -23,9 +23,11 @@ maternal geography, clans, birth years, spreadsheet IDs.
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections import Counter, defaultdict
 
 import build_regional_scholars as b
+import abstract_keyword_index as aki
 
 norm, fold, first = b.norm, b.fold, b.first
 BOOL_TEXT = re.compile(r'^\s*(true|false)\s*$', re.I)
@@ -185,8 +187,20 @@ def work_country(v):
     return '', ''
 
 
+def abstract_words(text):
+    """Distinct content words of an abstract, accent-folded like the page's search."""
+    out = set()
+    for w in aki.tokenize(text):
+        if w:
+            w = ''.join(ch for ch in unicodedata.normalize('NFD', w) if not unicodedata.combining(ch))
+            if len(w) > 1 and not w.isdigit():
+                out.add(w)
+    return out
+
+
 def build_directory(dumps, country_meta):
     scholars, pubs, pub_index = [], [], {}
+    abs_terms = defaultdict(set)  # pub index -> abstract words (search only)
     counts = Counter()
     # "Explain their research" kept in the Master itself (countries without
     # their own dashboard enrichment, e.g. Samoa). regional_card_extras.py
@@ -246,6 +260,12 @@ def build_directory(dumps, country_meta):
                     pb=first(r, 'Publisher / Institution / School', 'Publisher / Institution')[:200],
                     doi=doi, u=first(r, 'URL', 'Primary URL') if not doi else '', x=1 if bad else 0))
             local[pid] = pub_index[key]
+            # Search-only abstract words for Panels D and E. The abstract itself is
+            # never published: only its distinct content words, sorted (no word
+            # order), for the six counted publication types.
+            ab = norm(r.get('Abstract'))
+            if t != 'other' and len(ab) >= 40:
+                abs_terms[pub_index[key]].update(abstract_words(ab))
         auth = defaultdict(set)
         fa = defaultdict(set)
         for r in b.table(dump, 'Authorship', 'Authorship ID'):
@@ -359,6 +379,8 @@ def build_directory(dumps, country_meta):
     # Keep only publications linked to an included scholar, then re-index.
     used = sorted({i for sc in scholars for i in sc.get('p', [])})
     remap = {old: new for new, old in enumerate(used)}
+    for i, words in abs_terms.items():
+        pubs[i]['k'] = ' '.join(sorted(words))
     pubs = [{k: v for k, v in pubs[i].items() if v not in ('', None, 0)} for i in used]
     for sc in scholars:
         if 'p' in sc:
