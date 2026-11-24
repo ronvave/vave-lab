@@ -21,6 +21,7 @@ data/itaukei-master-positions.json
 data/itaukei-master-aggregates.json
 data/itaukei-master-worldpoints.json
 data/itaukei-master-researcher-authorship.json
+data/itaukei-master-abstract-index.json
 data/last-master-sync.json
 # Panel C1 body-composition plaintext (encrypted .enc is committed).
 data/body-composition.json

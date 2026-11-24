@@ -470,6 +470,8 @@
     // Also expose Scholar-ID-keyed insights so any consumer (admin V2, future
     // Panel F card renderer) can join by ID without a name round-trip.
     state.scholarInsightsById = (insightsDoc && insightsDoc.byScholarId) || {};
+    // Panel F abstract-derived search terms (name-keyed, like insights).
+    state.scholarAbstractTerms = (bundle.abstractIndexDoc && bundle.abstractIndexDoc.byName) || {};
     state.workplaceCoords = (workplaceCoordsDoc && workplaceCoordsDoc.coords) || {};
     state.uniCountryOverrides = (uniCountryDoc && uniCountryDoc.countryByUniversity) || {};
 
@@ -7082,6 +7084,9 @@
       }
       const prof = enrichedByName.get(r.name) || {};
       ['institution', 'department', 'title'].forEach(k => { if (prof[k]) bits.push(prof[k]); });
+      // Abstract-derived two-word terms (no abstract text is shipped).
+      const absTerms = (state.scholarAbstractTerms || {})[r.name];
+      if (absTerms) bits.push(absTerms);
       const pubText = pubTextByName.get(r.name) || '';
       const combined = (bits.join(' \u2022 ') + ' ' + pubText).toLowerCase();
       out.set(r.name, combined);
@@ -7355,8 +7360,9 @@
     }
     // Research-keyword search — scans across the AI-generated insight
     // (keywords + plain-English summary), profile fields (institution,
-    // department, title), and every publication a scholar authored
-    // (title + journal/publisher + tags). Case-insensitive substring so
+    // department, title), every publication a scholar authored
+    // (title + journal/publisher + tags), and two-word terms derived from
+    // their publication abstracts. Case-insensitive substring so
     // "funeral" surfaces work on funerary practices, "systematic literature
     // review" surfaces SLR authors, etc.
     const kwQ = (state.scholarKeywordSearch || '').trim().toLowerCase();

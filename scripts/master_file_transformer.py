@@ -42,6 +42,7 @@ from pathlib import Path
 
 import country_positions  # noqa: E402  (University positions snapshot)
 import country_news  # noqa: E402  (Panel A3 scholar news snapshot)
+import abstract_keyword_index  # noqa: E402  (Panel F abstract search terms)
 from typing import Any
 
 from master_file_config import (
@@ -701,7 +702,8 @@ def run(
         log(f"  → filtered Scholars: {len(scholars_all)} → {len(scholars)}")
 
     log("Fetching Publications...")
-    publications = extract_publications(fetch_fn("Publications"))
+    publication_rows = fetch_fn("Publications")
+    publications = extract_publications(publication_rows)
     log(f"  → {len(publications)} publications")
     # Defensive scrub: strip Part-iTaukei IDs from lead/co-author ID fields.
     # `Linked iTaukei Scholar Count` is recomputed off the filtered Authorship
@@ -882,6 +884,28 @@ def run(
     _write_json(out_dir / "itaukei-master-aggregates.json", aggregates)
     _write_json(out_dir / "itaukei-master-positions.json", positions_payload)
     _write_json(out_dir / "itaukei-master-news.json", news_payload)
+
+    # ----------------------------------------------------------------
+    # Panel F abstract-derived keyword index (Ron 2026-11-25).
+    # Abstracts stay private; only pooled, sorted two-word terms per
+    # scholar are published. See scripts/abstract_keyword_index.py.
+    # ----------------------------------------------------------------
+    log("Building Panel F abstract keyword index...")
+    _, raw_publication_dicts = rows_to_dicts(
+        publication_rows,
+        SHEETS["Publications"]["header_row"],
+        SHEETS["Publications"]["first_data"],
+    )
+    abstract_index = abstract_keyword_index.build(
+        raw_publication_dicts,
+        authorship,
+        [s.get("Scholar ID") for s in scholars],
+    )
+    _write_json(out_dir / "itaukei-master-abstract-index.json", abstract_index)
+    log(
+        f"  → abstract index: {abstract_index['scholarsIndexed']} scholars from "
+        f"{abstract_index['publicationsWithAbstracts']} eligible abstracts"
+    )
 
     # ----------------------------------------------------------------
     # Panel C1 body-composition (gendered per-type breakdown)

@@ -231,7 +231,11 @@
       (masterOnly ? Promise.resolve(EMPTY_ADMIN_DOC) : fetchJson('data/scholar-enrichment.json').catch(function () { return EMPTY_ADMIN_DOC; })),
       // Admin V2 research insights (Scholar-ID keyed): keywords, summaryHtml,
       // sources. Optional.
-      (masterOnly ? Promise.resolve(EMPTY_ADMIN_DOC) : fetchJson('data/scholar-insights-master.json').catch(function () { return EMPTY_ADMIN_DOC; }))
+      (masterOnly ? Promise.resolve(EMPTY_ADMIN_DOC) : fetchJson('data/scholar-insights-master.json').catch(function () { return EMPTY_ADMIN_DOC; })),
+      // Panel F abstract-derived search terms (Scholar-ID keyed). Built by
+      // scripts/abstract_keyword_index.py; contains pooled two-word terms,
+      // never abstract text. Optional: search simply skips abstracts.
+      fetchJson('data/itaukei-master-abstract-index.json').catch(function () { return null; })
     ]).then(function (arr) {
       return {
         scholars:            arr[0],
@@ -246,7 +250,8 @@
         v1GradStudies:       arr[9],
         masterWorldPoints:   arr[10],
         adminEnrichment:     arr[11] && arr[11].scholars ? arr[11] : EMPTY_ADMIN_DOC,
-        adminInsights:       arr[12] && arr[12].scholars ? arr[12] : EMPTY_ADMIN_DOC
+        adminInsights:       arr[12] && arr[12].scholars ? arr[12] : EMPTY_ADMIN_DOC,
+        abstractIndex:       arr[13] && arr[13].scholars ? arr[13] : { version: 1, scholars: {} }
       };
     });
   }
@@ -1323,6 +1328,17 @@
           sync: master.lastSync,
           grad: grad,
           insightsDoc: { insights: insightsByName, byScholarId: insightsById },
+          abstractIndexDoc: (function () {
+            var byId = (master.abstractIndex && master.abstractIndex.scholars) || {};
+            var byName = {};
+            master.scholars.forEach(function (s) {
+              var terms = byId[s['Scholar ID']];
+              if (!terms) return;
+              var name = toZoteroCreator(s['Scholar Name'], s['Family Name'], s['Given Names']);
+              byName[name] = byName[name] ? byName[name] + ' \u2022 ' + terms : terms;
+            });
+            return { byName: byName, byScholarId: byId };
+          })(),
           workplaceCoordsDoc: { coords: {} },
           uniCountryDoc: { countryByUniversity: {} },
           progressRoster: master.scholars.map(function (s) {
