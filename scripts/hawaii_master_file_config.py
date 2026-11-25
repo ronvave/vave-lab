@@ -135,6 +135,7 @@ SCHOLAR_PUBLIC_FIELDS = [
     "Alive / Deceased",
     "Year of Death",
     "Retired",
+    "Photo URL",
     # Current Hawaiʻi hierarchy (Village/Town → District → Specific Island →
     # Island Division). Legacy names remain below so older exports continue
     # to pass the same public-field gate during a rolling deployment.
