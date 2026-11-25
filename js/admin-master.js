@@ -3018,4 +3018,14 @@
   }
 
   window.VaveLabScholarSubmissionAdmin={approvePhoto:approveScholarSubmissionPhoto_};
+  // Scholar list for the News Story Submissions name search (js/tongan-news-admin.js).
+  window.VaveLabAdminRoster = function () {
+    return (state.scholars || []).filter(function (s) { return s['Scholar ID']; }).map(function (s) {
+      var given = String(s['Given Names'] || '').trim(), family = String(s['Family Name'] || '').trim();
+      var name = given && family ? given + ' ' + family : String(s['Scholar Name'] || '').split(',').reverse().join(' ').replace(/\s+/g, ' ').trim();
+      return { id: String(s['Scholar ID']).toUpperCase(), name: name,
+        aliases: [s['Scholar Name'], s['Preferred Family Name'], s['Name Variants / Aliases']].filter(Boolean).join(' '),
+        inst: String(s['Current Institution'] || '').trim() };
+    });
+  };
 })();

@@ -14,6 +14,35 @@
   var IDX = host.getAttribute('data-id-example') || 'TNG-S0000';
   // data-multi-id="1": the backend accepts several Scholar IDs ("ID; ID").
   var MULTI = host.getAttribute('data-multi-id') === '1';
+  // Name search (MULTI only): the Admin page exposes its loaded scholar list.
+  function fold(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\u2018\u2019\u02bb\u02bc']/g, '').toLowerCase(); }
+  var rosterCache = null;
+  function roster() {
+    if (rosterCache && rosterCache.length) return rosterCache;
+    var r = [];
+    try { r = typeof window.VaveLabAdminRoster === 'function' ? window.VaveLabAdminRoster() : []; } catch (_) { r = []; }
+    rosterCache = r.map(function (x) { return { id: x.id, name: x.name, inst: x.inst || '', words: fold(x.name + ' ' + (x.aliases || '')).split(/[^a-z0-9]+/).filter(Boolean) }; });
+    return rosterCache;
+  }
+  function splitIds(v) { return String(v || '').toUpperCase().split(/[;,\s]+/).filter(function (x, i, a) { return x && a.indexOf(x) === i; }); }
+  function searchScholars(q, extra) {
+    var toks = fold(q).split(/[^a-z0-9-]+/).filter(Boolean);
+    if (!toks.length) return [];
+    var pool = roster().slice();
+    (extra || []).forEach(function (c) { if (!pool.some(function (p) { return p.id === c.id; })) pool.push({ id: c.id, name: c.name, inst: '', words: fold(c.name).split(/[^a-z0-9]+/).filter(Boolean) }); });
+    var out = [];
+    pool.forEach(function (p) {
+      var score = 0, ok = toks.every(function (t) {
+        if (fold(p.id).indexOf(t) >= 0) { score += 2; return true; }
+        var exact = p.words.indexOf(t) >= 0, pre = exact || p.words.some(function (w) { return w.indexOf(t) === 0; });
+        if (exact) score += 3; else if (pre) score += 2;
+        return pre;
+      });
+      if (ok) out.push({ p: p, score: score + ((extra || []).some(function (c) { return c.id === p.id; }) ? 1 : 0) });
+    });
+    out.sort(function (a, b) { return b.score - a.score || a.p.name.localeCompare(b.p.name); });
+    return out.slice(0, 12).map(function (x) { return x.p; });
+  }
   var tab = document.querySelector('[data-tab="news-submissions"]');
   var TYPES = [['News', 'News story'], ['Thesis', 'New thesis'], ['Publication', 'New publication'], ['Event', 'Event (including webinars and thesis defenses)']];
   var OPEN = { Thesis: 1, Publication: 1 }, TIMED = { Defense: 1, Event: 1 };
@@ -125,10 +154,21 @@
     var fillMsg = el('span', 'Reads the page title, picture, outlet and date and suggests matching scholars. Check every field.', form, 'meta tnews-fill-msg');
     if (!u) { fill.hidden = true; fillMsg.textContent = 'The fields below are filled from the event form. Choose the scholar and check every field.'; }
     var grid = el('div', null, form, 'tnews-grid');
-    var scholar = field(grid, MULTI ? 'Scholar (choose to add each one)' : 'Scholar', 'scholarSel', 'select', '', { options: [['', MULTI ? 'Choose after filling, or type IDs below' : 'Choose after filling, or type an ID below']] });
+    var scholar = null, pick = null, picks = null, picked = null, suggested = [];
+    if (MULTI) {
+      var pw = el('div', null, grid, 'tnews-f tnews-pick');
+      var pl = el('span', 'Scholar (type a first, middle or last name)', pw); pl.id = 'tnews-pick-l-' + row['Submission ID'];
+      pick = el('input', null, pw); pick.type = 'search'; pick.autocomplete = 'off'; pick.placeholder = 'e.g. Ame, Raogo or Tuisavusavu';
+      pick.setAttribute('role', 'combobox'); pick.setAttribute('aria-expanded', 'false'); pick.setAttribute('aria-labelledby', pl.id);
+      picks = el('ul', null, pw, 'tnews-pick-list'); picks.setAttribute('role', 'listbox'); picks.hidden = true;
+      el('small', 'Choose a name to add their Scholar ID. Add each scholar the story names.', pw);
+    } else {
+      scholar = field(grid, 'Scholar', 'scholarSel', 'select', '', { options: [['', 'Choose after filling, or type an ID below']] });
+    }
     var sid = MULTI
       ? field(grid, 'Scholar ID(s)', 'scholarId', 'text', '', { placeholder: IDX + '; ' + IDX, hint: 'For a story about several scholars, separate the IDs with semicolons. The first ID leads the story.' })
       : field(grid, 'Scholar ID', 'scholarId', 'text', '', { placeholder: IDX });
+    if (MULTI) picked = el('small', '', sid.closest('label'), 'tnews-picked');
     var type = field(grid, 'Type', 'type', 'select', typeKey(row['Announcement Type']), { options: TYPES });
     var shown = field(grid, 'Name shown on the dashboard', 'displayName', 'text', '', { hint: 'Optional for database scholars. For a new thesis or publication about ' + PLACE + ' by someone outside the database, leave Scholar ID blank and enter the author name(s) here.' });
     var cat = field(grid, 'Category (news stories)', 'category', 'select', '', { options: [['', 'Choose']].concat(CATS.map(function (x) { return [x, x]; })) });
@@ -161,13 +201,62 @@
       sid.placeholder = OPEN[type.value] ? ph + ', or blank if the author is not in the database' : ph;
     }
     type.addEventListener('change', sync); sync();
-    scholar.addEventListener('change', function () {
-      if (!scholar.value) return;
-      if (!MULTI) { sid.value = scholar.value; return; }
-      var ids = sid.value.toUpperCase().split(/[;,\s]+/).filter(Boolean);
-      if (ids.indexOf(scholar.value) < 0) ids.push(scholar.value);
-      sid.value = ids.join('; '); scholar.value = '';
-    });
+    if (!MULTI) scholar.addEventListener('change', function () { if (scholar.value) sid.value = scholar.value; });
+    function nameOf(id) {
+      var all = roster().concat(suggested);
+      for (var i = 0; i < all.length; i++) if (all[i].id === id) return all[i].name;
+      return '';
+    }
+    function showPicked() {
+      if (!picked) return;
+      var ids = splitIds(sid.value);
+      picked.textContent = ids.length ? 'Added: ' + ids.map(function (id) { var n = nameOf(id); return n ? n + ' (' + id + ')' : id + ' (not in the loaded list)'; }).join(' \u00b7 ') : '';
+    }
+    function addId(id) {
+      var ids = splitIds(sid.value);
+      if (ids.indexOf(id) < 0) ids.push(id);
+      sid.value = ids.join('; '); showPicked();
+    }
+    if (MULTI) {
+      var hits = [], active = -1;
+      var closePicks = function () { picks.hidden = true; pick.setAttribute('aria-expanded', 'false'); active = -1; };
+      var renderPicks = function () {
+        var q = pick.value.trim();
+        hits = q ? searchScholars(q, suggested) : suggested.slice();
+        picks.textContent = '';
+        if (!hits.length) {
+          if (!q) { closePicks(); return; }
+          el('li', roster().length ? 'No scholar matches \u201c' + q + '\u201d.' : 'The scholar list is still loading. Try again in a moment.', picks, 'tnews-pick-none');
+        } else {
+          if (!q) el('li', 'Suggested from the submission', picks, 'tnews-pick-head');
+          var have = splitIds(sid.value);
+          hits.forEach(function (p, i) {
+            var li = el('li', null, picks, 'tnews-pick-item' + (i === active ? ' is-active' : ''));
+            li.setAttribute('role', 'option'); li.setAttribute('aria-selected', i === active ? 'true' : 'false');
+            el('strong', p.name, li); el('span', ' ' + p.id + (p.inst ? ' \u00b7 ' + (p.inst.length > 60 ? p.inst.slice(0, 57) + '\u2026' : p.inst) : '') + (have.indexOf(p.id) >= 0 ? ' \u00b7 added' : ''), li, 'meta');
+            li.addEventListener('mousedown', function (e) { e.preventDefault(); choose(i); });
+          });
+        }
+        picks.hidden = false; pick.setAttribute('aria-expanded', 'true');
+      };
+      var choose = function (i) { var p = hits[i]; if (!p) return; addId(p.id); pick.value = ''; closePicks(); pick.focus(); };
+      pick.addEventListener('input', function () { active = -1; renderPicks(); });
+      pick.addEventListener('focus', renderPicks);
+      pick.addEventListener('blur', function () { setTimeout(closePicks, 120); });
+      pick.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          if (picks.hidden) renderPicks();
+          if (!hits.length) return;
+          e.preventDefault();
+          active = e.key === 'ArrowDown' ? (active + 1) % hits.length : (active <= 0 ? hits.length - 1 : active - 1);
+          renderPicks();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (hits.length) choose(active >= 0 ? active : 0);
+        } else if (e.key === 'Escape') closePicks();
+      });
+      sid.addEventListener('input', showPicked);
+    }
     img.addEventListener('input', function () { var s = safeUrl(img.value); thumb.hidden = !s; if (s) thumb.src = s; });
     fill.addEventListener('click', function () {
       fill.disabled = true; fillMsg.textContent = 'Reading the page…';
@@ -177,10 +266,16 @@
         if (r.outlet && !outlet.value) outlet.value = r.outlet;
         if (r.date && !date.value) date.value = r.date;
         if (r.image && !img.value) { img.value = r.image; img.dispatchEvent(new Event('input')); if (!credit.value) credit.value = r.outlet || ''; }
-        while (scholar.options.length > 1) scholar.remove(1);
-        (r.candidates || []).forEach(function (s) { var o = el('option', s.name + ' (' + s.id + ')', scholar); o.value = s.id; });
-        if (r.candidates && r.candidates.length === 1) { scholar.value = r.candidates[0].id; sid.value = r.candidates[0].id; }
-        fillMsg.textContent = (r.fetchNote ? r.fetchNote + ' ' : 'Filled from the page. ') + ((r.candidates || []).length ? (r.candidates.length + ' possible scholar match' + (r.candidates.length > 1 ? 'es' : '') + '. ') : 'No scholar match found; type the Scholar ID. ') + 'Check every field before approving.';
+        if (MULTI) {
+          suggested = (r.candidates || []).map(function (s) { return { id: String(s.id).toUpperCase(), name: s.name, inst: '' }; });
+          if (suggested.length === 1 && !sid.value.trim()) addId(suggested[0].id);
+          showPicked();
+        } else {
+          while (scholar.options.length > 1) scholar.remove(1);
+          (r.candidates || []).forEach(function (s) { var o = el('option', s.name + ' (' + s.id + ')', scholar); o.value = s.id; });
+          if (r.candidates && r.candidates.length === 1) { scholar.value = r.candidates[0].id; sid.value = r.candidates[0].id; }
+        }
+        fillMsg.textContent = (r.fetchNote ? r.fetchNote + ' ' : 'Filled from the page. ') + ((r.candidates || []).length ? (r.candidates.length + ' possible scholar match' + (r.candidates.length > 1 ? 'es' : '') + '. ') : (MULTI ? 'No scholar match found; search by name. ' : 'No scholar match found; type the Scholar ID. ')) + 'Check every field before approving.';
       }).catch(function (e) { fillMsg.textContent = 'Could not read the page: ' + e.message + '. Enter the details by hand.'; })
         .then(function () { fill.disabled = false; });
     });
