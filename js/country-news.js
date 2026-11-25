@@ -104,25 +104,29 @@
   }
   function inAll(it) { return !it.auto || it.inAll; }
   // "All" list. Without ROUNDS: hand-added stories plus the newest few theses
-  // and publications (inAll). With ROUNDS: the same number of thesis and
-  // publication slots, but one per scholar, for the most recently active
-  // scholars; round r shows each scholar's r-th item (cycling).
+  // and publications (inAll). With ROUNDS, one slot per scholar:
+  //   * hand-added news stories: every scholar keeps one slot;
+  //   * new theses and publications: the same number of slots as before, for
+  //     the most recently active scholars.
+  // Round r shows each scholar's r-th item (cycling). Events are unchanged.
   function allList() {
     if (!ROUNDS) return N.items.filter(inAll);
-    var slots = {}, groups = {}, order = {};
+    var slots = { News: Infinity }, groups = {}, order = {};
     N.items.forEach(function (it) { if (it.auto && it.inAll) slots[it.type] = (slots[it.type] || 0) + 1; });
+    function kind(it) { return it.auto ? it.type : (typeOf(it) === 'News' ? 'News' : ''); }
     N.items.forEach(function (it) {
-      if (!it.auto || !slots[it.type]) return;
+      var t = kind(it);
+      if (!t || !slots[t]) return;
       var who = String(it.sid || it.name || it.id || '').toUpperCase();
-      var g = groups[it.type] || (groups[it.type] = {}), o = order[it.type] || (order[it.type] = []);
+      var g = groups[t] || (groups[t] = {}), o = order[t] || (order[t] = []);
       if (!g[who]) { g[who] = []; o.push(who); }
       g[who].push(it);
     });
     var pick = [];
-    Object.keys(slots).forEach(function (t) {
+    Object.keys(order).forEach(function (t) {
       order[t].slice(0, slots[t]).forEach(function (who) { var list = groups[t][who]; pick.push(list[(A.round || 0) % list.length]); });
     });
-    return N.items.filter(function (it) { return !it.auto || pick.indexOf(it) >= 0; });
+    return N.items.filter(function (it) { return kind(it) ? pick.indexOf(it) >= 0 : (!it.auto || it.inAll); });
   }
   function nextRound() {
     A.round = (A.round || 0) + 1;
@@ -673,7 +677,7 @@
     grid.addEventListener('focusout', function (e) { if (!grid.contains(e.relatedTarget)) schedule(); });
     root.hidden = false;
     // Each visit continues from the next round, so repeat visitors see other items.
-    if (ROUNDS) { try { A.round = (+localStorage.getItem(ROUND_KEY) || 0) + 1; localStorage.setItem(ROUND_KEY, String(A.round)); } catch (_) { A.round = 0; } }
+    if (ROUNDS) { try { var last = localStorage.getItem(ROUND_KEY); A.round = last == null ? 0 : (+last || 0) + 1; localStorage.setItem(ROUND_KEY, String(A.round)); } catch (_) { A.round = 0; } }
     setType('all');
     // Positions and institutions come with the Panel F records; redraw once they are ready.
     if (!profiles()) {
