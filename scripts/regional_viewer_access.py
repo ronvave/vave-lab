@@ -14,6 +14,12 @@ the expiry. Targets:
   vanuatu   data/vanuatu-collaborator-bundle.json.enc
             (VAVELAB_VANUATU_COLLABORATOR_PASSCODE)
             -> data/vanuatu-collaborator-bundle.viewer.enc (VANUATU_VIEWER_KEY)
+  vanuatu-embedded
+            same source -> data/vanuatu-embedded.viewer.enc, sealed with
+            VANUATU_EMBEDDED_KEY below. That key is also in
+            js/vanuatu-demo-gate.js so dev devices and 2-hour #demo= links open
+            the dashboard the same way Fiji and Tonga do (Ron approved this
+            trade-off on 2026-11-25). Created once with a far-future expiry.
 
   countries data/regional-scholars.json.enc (REGIONAL_PASSCODE)
             -> data/regional-scholars-<code>.viewer.enc, one per country in
@@ -68,6 +74,9 @@ def restrict(plain, links):
     return json.dumps(d, ensure_ascii=False, separators=(',', ':')).encode()
 
 
+# Public by design: must match EMBED_KEY in js/vanuatu-demo-gate.js.
+VANUATU_EMBEDDED_KEY = '5oNvSHqWPG81BgiJBvyS1ztWdBMJcZy_2yG_UKjCQ5w'
+
 TARGETS = {
     'regional': dict(src='regional-scholars.json.enc', pw='REGIONAL_PASSCODE',
                      out='regional-scholars.viewer.enc', key='REGIONAL_VIEWER_KEY',
@@ -75,6 +84,9 @@ TARGETS = {
     'vanuatu': dict(src='vanuatu-collaborator-bundle.json.enc', pw='VAVELAB_VANUATU_COLLABORATOR_PASSCODE',
                     out='vanuatu-collaborator-bundle.viewer.enc', key='VANUATU_VIEWER_KEY',
                     meta='vanuatu-viewer-access.json', extra=None),
+    'vanuatu-embedded': dict(src='vanuatu-collaborator-bundle.json.enc', pw='VAVELAB_VANUATU_COLLABORATOR_PASSCODE',
+                             out='vanuatu-embedded.viewer.enc', key=None, fixed_key=VANUATU_EMBEDDED_KEY,
+                             meta='vanuatu-embedded-viewer-access.json', extra=None),
     'countries': dict(src='regional-scholars.json.enc', pw='REGIONAL_PASSCODE',
                       out=None, key='REGIONAL_COUNTRY_VIEWERS',
                       meta='regional-country-viewer-access.json', extra=None),
@@ -162,7 +174,7 @@ class Target:
         self.src, self.out, self.meta = DATA / t['src'], DATA / t['out'], DATA / t['meta']
 
     def plain_and_key(self):
-        key = os.environ.get(self.t['key'], '')
+        key = self.t.get('fixed_key') or os.environ.get(self.t['key'] or '', '')
         if len(key) < 24:
             sys.exit(f"{self.t['key']} secret is missing or too short")
         plain = opens(self.src.read_bytes(), os.environ.get(self.t['pw'], ''))
@@ -205,7 +217,7 @@ class Target:
 
 if __name__ == '__main__':
     if len(sys.argv) < 3 or sys.argv[2] not in ('create', 'sync', 'remove') or sys.argv[1] not in (*TARGETS, 'all'):
-        sys.exit('usage: regional_viewer_access.py regional|vanuatu|countries|all create|sync|remove')
+        sys.exit('usage: regional_viewer_access.py regional|vanuatu|vanuatu-embedded|countries|all create|sync|remove')
     names = list(TARGETS) if sys.argv[1] == 'all' else [sys.argv[1]]
     for n in names:
         print(f'{n}: ' + getattr((CountryTargets if n == 'countries' else Target)(n), sys.argv[2])())

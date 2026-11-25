@@ -26,7 +26,7 @@ on:
       target:
         description: 'Which dashboard'
         type: choice
-        options: [regional, vanuatu, countries, all]
+        options: [regional, vanuatu, vanuatu-embedded, countries, all]
         default: all
       action:
         description: 'create or remove'
@@ -55,7 +55,7 @@ jobs:
       - name: Skip quietly when no link is active
         id: pre
         run: |
-          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && [ ! -f data/regional-viewer-access.json ]; then echo "skip=1" >> "$GITHUB_OUTPUT"; fi
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] && ! ls data/*-viewer-access.json >/dev/null 2>&1; then echo "skip=1" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/setup-python@v5
         if: steps.pre.outputs.skip != '1'
         with:
