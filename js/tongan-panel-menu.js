@@ -37,7 +37,8 @@
     const panel = targets.get(code); if (!panel) return;
     if (panel.tagName === 'DETAILS') panel.open = true;
     panel.setAttribute('tabindex','-1'); panel.focus({preventScroll:true});
-    const header = document.querySelector('.site-header');
+    // A header folded away by site-header-autohide.js takes no space.
+    const header = document.querySelector('.site-header:not(.site-header--tucked)');
     const offset = Math.max(0, header ? header.getBoundingClientRect().bottom : 0) + nav.getBoundingClientRect().height + 16;
     window.scrollTo({top:Math.max(0,window.scrollY + panel.getBoundingClientRect().top - offset),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
     // Do not replace location.hash: it stores B2's independent filter state.
