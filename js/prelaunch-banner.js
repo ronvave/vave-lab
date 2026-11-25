@@ -22,7 +22,15 @@
     '[data-theme="dark"] .db-prelaunch{background:#fde58a;color:#111}' +
     '.db-prelaunch--top{position:fixed;top:0;left:0;right:0;z-index:2147483000;margin:0;box-sizing:border-box}' +
     'html.has-prelaunch body{box-sizing:border-box;padding-top:var(--prelaunch-h,46px)!important}' +
-    'html.has-prelaunch body>iframe{height:calc(100dvh - var(--prelaunch-h,46px))!important}';
+    'html.has-prelaunch body>iframe{height:calc(100dvh - var(--prelaunch-h,46px))!important}' +
+    // Country dashboards: card in the empty left margin beside the panels.
+    '.db-prelaunch--side{position:fixed;left:16px;z-index:4000;margin:0;box-sizing:border-box;flex-direction:column;align-items:flex-start;' +
+    'justify-content:flex-start;gap:10px;padding:16px 15px;border:1px solid #e3c043;border-left:6px solid #d4a514;border-radius:10px;' +
+    'box-shadow:0 6px 18px rgba(89,64,34,.16);font-size:13px;line-height:1.45;max-height:calc(100vh - 120px);overflow:auto}' +
+    '.db-prelaunch--side .db-prelaunch__sep{display:none}' +
+    '.db-prelaunch--side .db-prelaunch__icon{width:30px;height:30px}' +
+    '.db-prelaunch--side .db-prelaunch__title{white-space:normal;font-size:15px;line-height:1.25;border-bottom:1px solid rgba(0,0,0,.35);padding-bottom:9px;width:100%}' +
+    '.db-prelaunch--side .db-prelaunch__mail{font-size:12.5px}';
   var style = document.createElement('style');
   style.textContent = css;
   document.head.appendChild(style);
@@ -38,17 +46,83 @@
       '<span class="db-prelaunch__sep" aria-hidden="true"></span>' +
       '<strong class="db-prelaunch__title">Dashboard not yet launched</strong>' +
       '<span class="db-prelaunch__sep" aria-hidden="true"></span>' +
-      '<span class="db-prelaunch__msg">This dashboard is in pre-launch preview for collaborators only. ' +
+      '<span class="db-prelaunch__msg">This dashboard is in <span style="white-space:nowrap">pre-launch</span> preview for collaborators only. ' +
       'Please do not share the weblink or screenshots publicly until it is officially launched. ' +
       'For more information, contact ' +
-      '<a class="db-prelaunch__mail" href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>.</span>';
+      '<a class="db-prelaunch__mail" href="mailto:ronvave@hawaii.edu">ronvave@<wbr>hawaii.edu</a>.</span>';
     return bar;
+  }
+
+  // Country dashboards (.db-panel-menu): show the notice as a card in the
+  // left margin when the window leaves enough room beside the panels;
+  // otherwise fall back to the strip under the panel menu.
+  var SIDE_MIN = 172; // px of free left margin needed for the card
+  function attachSide(nav) {
+    var bar = build();
+    bar.classList.add('db-prelaunch--side');
+    bar.hidden = true;
+    document.body.appendChild(bar);
+    var mode = '', lastTop = -1;
+    function gutter() {
+      // Left edge of the first visible panel (some panels are hidden until
+      // a gate unlocks); otherwise the dashboard title in the page banner.
+      var list = document.querySelectorAll('.panel-menu-target, .db-panel');
+      for (var i = 0; i < list.length; i++) {
+        var r = list[i].getBoundingClientRect();
+        if (r.width > 0 && r.width < window.innerWidth - 40) return r.left;
+      }
+      var h = document.querySelector('.page-banner h1') || document.querySelector('.page-banner .container');
+      return h ? h.getBoundingClientRect().left : 0;
+    }
+    function layout() {
+      var g = gutter();
+      var want = g >= SIDE_MIN ? 'side' : 'strip';
+      if (want !== mode) {
+        mode = want;
+        if (want === 'side') {
+          bar.classList.add('db-prelaunch--side'); bar.removeAttribute('style');
+          document.body.appendChild(bar); lastTop = -1;
+        } else {
+          bar.classList.remove('db-prelaunch--side');
+          var cs = getComputedStyle(nav);
+          bar.removeAttribute('style');
+          bar.style.margin = '8px -' + cs.paddingRight + ' -' + cs.paddingBottom + ' -' + cs.paddingLeft;
+          nav.appendChild(bar);
+        }
+        bar.hidden = false;
+        window.dispatchEvent(new Event('resize')); // let the menu re-measure
+      }
+      if (mode === 'side') bar.style.width = Math.min(200, Math.round(g - 32)) + 'px';
+    }
+    // Keep the card just below the floating menu, following it when the
+    // site header folds away.
+    var tick = 0;
+    function follow() {
+      if (++tick % 30 === 0) layout(); // re-check after gates unlock
+      if (mode === 'side') {
+        // Sit below the page banner on load, then rise to just under the menu.
+        var pb = document.querySelector('.page-banner');
+        var t = Math.round(Math.max(nav.getBoundingClientRect().bottom, pb ? pb.getBoundingClientRect().bottom : 0)) + 18;
+        if (t !== lastTop) { lastTop = t; bar.style.top = t + 'px'; }
+      }
+      requestAnimationFrame(follow);
+    }
+    var pending = false;
+    window.addEventListener('resize', function () {
+      if (pending) return; pending = true;
+      requestAnimationFrame(function () { pending = false; layout(); });
+    });
+    window.addEventListener('vavelab:master-hydrated', layout);
+    layout();
+    requestAnimationFrame(follow);
+    return true;
   }
 
   function attach() {
     var nav = document.querySelector('.db-panel-menu, .ps-pmenu');
     if (!nav) return false;
-    if (nav.querySelector('.db-prelaunch')) return true;
+    if (document.querySelector('.db-prelaunch')) return true;
+    if (nav.classList.contains('db-panel-menu')) return attachSide(nav);
     var bar = build();
     var cs = getComputedStyle(nav);
     // Run edge to edge beneath the pills, cancelling the menu's own padding.
