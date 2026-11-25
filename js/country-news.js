@@ -47,6 +47,11 @@
   // (up to 4 tiles; the last tile notes how many more). Opt-in per page.
   var SPLIT = !!(me && me.dataset.splitPhotos);
   var MAX_FACES = 4;
+  // data-all-rounds: in "All", a scholar with several new theses or
+  // publications fills one slot only; their items take turns, one per round
+  // (a round is one full pass of the rotating stories). Opt-in per page.
+  var ROUNDS = !!(me && me.dataset.allRounds);
+  var ROUND_KEY = 'vl-news-round:' + location.pathname;
   if (!SRC) return;
   var ROTATE_MS = 8000;
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -98,6 +103,37 @@
     return '';
   }
   function inAll(it) { return !it.auto || it.inAll; }
+  // "All" list. Without ROUNDS: hand-added stories plus the newest few theses
+  // and publications (inAll). With ROUNDS: the same number of thesis and
+  // publication slots, but one per scholar, for the most recently active
+  // scholars; round r shows each scholar's r-th item (cycling).
+  function allList() {
+    if (!ROUNDS) return N.items.filter(inAll);
+    var slots = {}, groups = {}, order = {};
+    N.items.forEach(function (it) { if (it.auto && it.inAll) slots[it.type] = (slots[it.type] || 0) + 1; });
+    N.items.forEach(function (it) {
+      if (!it.auto || !slots[it.type]) return;
+      var who = String(it.sid || it.name || it.id || '').toUpperCase();
+      var g = groups[it.type] || (groups[it.type] = {}), o = order[it.type] || (order[it.type] = []);
+      if (!g[who]) { g[who] = []; o.push(who); }
+      g[who].push(it);
+    });
+    var pick = [];
+    Object.keys(slots).forEach(function (t) {
+      order[t].slice(0, slots[t]).forEach(function (who) { var list = groups[t][who]; pick.push(list[(A.round || 0) % list.length]); });
+    });
+    return N.items.filter(function (it) { return !it.auto || pick.indexOf(it) >= 0; });
+  }
+  function nextRound() {
+    A.round = (A.round || 0) + 1;
+    try { localStorage.setItem(ROUND_KEY, String(A.round)); } catch (_) {}
+    setType('all');
+  }
+  // Moving past the last story in "All" starts the next round.
+  function step() {
+    if (ROUNDS && A.type === 'all' && A.i >= A.list.length - 1) nextRound();
+    else show(A.i + 1);
+  }
   function initials(name) {
     // First and last name of the first person named, e.g. "SM" for
     // "Suliana Alouaivaha Mone"; okina and apostrophes are skipped.
@@ -511,7 +547,7 @@
     clearInterval(A.timer);
     if (A.paused || A.list.length < 2) return;
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    A.timer = setInterval(function () { show(A.i + 1); }, ROTATE_MS);
+    A.timer = setInterval(step, ROTATE_MS);
   }
 
   // Story list: one small flag per institution country of the story's scholars.
@@ -539,7 +575,7 @@
     var root = A.root, t = TYPES.filter(function (x) { return x.key === key; })[0] || TYPES[0];
     A.type = t.key;
     A.sub = sub || '';
-    A.list = t.key === 'all' ? N.items.filter(inAll) : N.items.filter(function (it) { return typeOf(it) === t.key; });
+    A.list = t.key === 'all' ? allList() : N.items.filter(function (it) { return typeOf(it) === t.key; });
     root.querySelectorAll('[data-nw-type]').forEach(function (b) {
       var on = b.dataset.nwType === t.key;
       b.classList.toggle('is-on', on);
@@ -597,7 +633,7 @@
     root.querySelector('[data-news-body]').innerHTML =
       '<div class="nw__bar"><div class="nw__types" role="group" aria-label="Show announcements">' +
       TYPES.map(function (t) {
-        var n = t.key === 'all' ? N.items.filter(inAll).length : (counts[t.key] || 0);
+        var n = t.key === 'all' ? allList().length : (counts[t.key] || 0);
         return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + (t.key === 'all' ? '' : ico(t.key)) + esc(t.label) +
           '<span class="nw__n">' + n + '</span></button>' +
           (SUBS[t.key] && n ? '<label class="pn-sub" data-pn-sub-for="' + t.key + '" hidden>' + ico(t.key) + '<select data-pn-sub aria-label="' + esc(SUBS[t.key].aria) + '"></select></label>' : '');
@@ -613,7 +649,7 @@
       (FOOT_UNDER ? '' : foot) + '</div></div>';
     var ctrls = root.querySelector('.nw__ctrls');
     ctrls.querySelector('[data-nw-prev]').addEventListener('click', function () { show(A.i - 1); schedule(); });
-    ctrls.querySelector('[data-nw-next]').addEventListener('click', function () { show(A.i + 1); schedule(); });
+    ctrls.querySelector('[data-nw-next]').addEventListener('click', function () { step(); schedule(); });
     var pause = ctrls.querySelector('[data-nw-pause]');
     pause.addEventListener('click', function () {
       A.paused = !A.paused;
@@ -636,6 +672,8 @@
     grid.addEventListener('focusin', function () { clearInterval(A.timer); });
     grid.addEventListener('focusout', function (e) { if (!grid.contains(e.relatedTarget)) schedule(); });
     root.hidden = false;
+    // Each visit continues from the next round, so repeat visitors see other items.
+    if (ROUNDS) { try { A.round = (+localStorage.getItem(ROUND_KEY) || 0) + 1; localStorage.setItem(ROUND_KEY, String(A.round)); } catch (_) { A.round = 0; } }
     setType('all');
     // Positions and institutions come with the Panel F records; redraw once they are ready.
     if (!profiles()) {
