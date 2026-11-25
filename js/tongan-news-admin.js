@@ -12,6 +12,8 @@
   if (!host) return;
   var PLACE = host.getAttribute('data-place') || 'Tonga';
   var IDX = host.getAttribute('data-id-example') || 'TNG-S0000';
+  // data-multi-id="1": the backend accepts several Scholar IDs ("ID; ID").
+  var MULTI = host.getAttribute('data-multi-id') === '1';
   var tab = document.querySelector('[data-tab="news-submissions"]');
   var TYPES = [['News', 'News story'], ['Thesis', 'New thesis'], ['Publication', 'New publication'], ['Event', 'Event (including webinars and thesis defenses)']];
   var OPEN = { Thesis: 1, Publication: 1 }, TIMED = { Defense: 1, Event: 1 };
@@ -123,8 +125,10 @@
     var fillMsg = el('span', 'Reads the page title, picture, outlet and date and suggests matching scholars. Check every field.', form, 'meta tnews-fill-msg');
     if (!u) { fill.hidden = true; fillMsg.textContent = 'The fields below are filled from the event form. Choose the scholar and check every field.'; }
     var grid = el('div', null, form, 'tnews-grid');
-    var scholar = field(grid, 'Scholar', 'scholarSel', 'select', '', { options: [['', 'Choose after filling, or type an ID below']] });
-    var sid = field(grid, 'Scholar ID', 'scholarId', 'text', '', { placeholder: IDX });
+    var scholar = field(grid, MULTI ? 'Scholar (choose to add each one)' : 'Scholar', 'scholarSel', 'select', '', { options: [['', MULTI ? 'Choose after filling, or type IDs below' : 'Choose after filling, or type an ID below']] });
+    var sid = MULTI
+      ? field(grid, 'Scholar ID(s)', 'scholarId', 'text', '', { placeholder: IDX + '; ' + IDX, hint: 'For a story about several scholars, separate the IDs with semicolons. The first ID leads the story.' })
+      : field(grid, 'Scholar ID', 'scholarId', 'text', '', { placeholder: IDX });
     var type = field(grid, 'Type', 'type', 'select', typeKey(row['Announcement Type']), { options: TYPES });
     var shown = field(grid, 'Name shown on the dashboard', 'displayName', 'text', '', { hint: 'Optional for database scholars. For a new thesis or publication about ' + PLACE + ' by someone outside the database, leave Scholar ID blank and enter the author name(s) here.' });
     var cat = field(grid, 'Category (news stories)', 'category', 'select', '', { options: [['', 'Choose']].concat(CATS.map(function (x) { return [x, x]; })) });
@@ -153,10 +157,17 @@
       var news = type.value === 'News', timed = !!TIMED[type.value];
       cat.closest('label').hidden = !news;
       when.closest('label').hidden = !timed; where.closest('label').hidden = !timed;
-      sid.placeholder = OPEN[type.value] ? IDX + ', or blank if the author is not in the database' : IDX;
+      var ph = MULTI ? IDX + '; ' + IDX : IDX;
+      sid.placeholder = OPEN[type.value] ? ph + ', or blank if the author is not in the database' : ph;
     }
     type.addEventListener('change', sync); sync();
-    scholar.addEventListener('change', function () { if (scholar.value) sid.value = scholar.value; });
+    scholar.addEventListener('change', function () {
+      if (!scholar.value) return;
+      if (!MULTI) { sid.value = scholar.value; return; }
+      var ids = sid.value.toUpperCase().split(/[;,\s]+/).filter(Boolean);
+      if (ids.indexOf(scholar.value) < 0) ids.push(scholar.value);
+      sid.value = ids.join('; '); scholar.value = '';
+    });
     img.addEventListener('input', function () { var s = safeUrl(img.value); thumb.hidden = !s; if (s) thumb.src = s; });
     fill.addEventListener('click', function () {
       fill.disabled = true; fillMsg.textContent = 'Reading the page…';

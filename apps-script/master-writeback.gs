@@ -1340,8 +1340,13 @@ function fijiNewsResolve_(body) {
     if (decision === 'approve') {
       var f = body.story || {};
       var type = fijiNewsType_(f.type), shown = String(f.displayName || '').trim().slice(0,160);
-      var sid = String(f.scholarId || '').trim().toUpperCase(), scholar = sid ? fijiNewsScholars_(ss).filter(function(s){ return s.id === sid; })[0] : null;
-      if (sid && !scholar) return jsonOut_({status:'bad_request', reason:'Scholar ID ' + sid + ' is not in the database.'}, 400);
+      // One or more Scholar IDs ("ITK-S0224; ITK-S0502"); the first leads the story.
+      var sids = String(f.scholarId || '').toUpperCase().split(/[;,\s]+/).filter(function(x, i, a){ return x && a.indexOf(x) === i; });
+      var roster = sids.length ? fijiNewsScholars_(ss) : [], picked = sids.map(function(x){ return roster.filter(function(s){ return s.id === x; })[0]; });
+      var unknown = sids.filter(function(x, i){ return !picked[i]; });
+      if (unknown.length) return jsonOut_({status:'bad_request', reason:'Scholar ID' + (unknown.length > 1 ? 's ' : ' ') + unknown.join(', ') + (unknown.length > 1 ? ' are' : ' is') + ' not in the database.'}, 400);
+      var sid = sids.join('; '), names = picked.map(function(s){ return s.name; });
+      var scholar = picked.length ? {id:sid, name: names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0]} : null;
       if (!scholar && !(NEWS_OPEN_TYPES.indexOf(type) >= 0 && shown)) return jsonOut_({status:'bad_request', reason: NEWS_OPEN_TYPES.indexOf(type) >= 0 ? 'Choose a scholar, or enter the author name(s) for a thesis or publication about Fiji.' : 'Choose a scholar from the database.'}, 400);
       var cat = type === 'News' ? (NEWS_CATEGORIES.indexOf(String(f.category)) >= 0 ? String(f.category) : '') : '';
       var evo = type === 'Event' && o['Event Details'] ? vlEvApprove_(f, o) : null;
