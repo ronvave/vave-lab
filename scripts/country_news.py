@@ -54,6 +54,11 @@ def _iso(v) -> str:
 
 def _url(v) -> str:
     s = _s(v)
+    # A link pasted twice ("https://site.orghttps://site.org/a.jpg") keeps the
+    # last full address, so the image or article still opens.
+    m = re.match(r"^https?://[^/?#\s]+?(https?://\S+)$", s)
+    if m:
+        s = m.group(1)
     return s if s.startswith(("https://", "http://")) else ""
 
 

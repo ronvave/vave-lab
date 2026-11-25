@@ -76,6 +76,20 @@
   }
 
   // ------------------------------------------------------------ photos
+  // A story's own image that fails to load (broken or mistyped link) falls
+  // back to the scholar's profile photo, then to initials.
+  if (!window.__vlNewsImgErr) window.__vlNewsImgErr = function (im) {
+    var fb = im.getAttribute('data-fb');
+    if (!fb) { im.remove(); return; }
+    im.removeAttribute('data-fb');
+    var box = im.parentNode;
+    if (box && box.classList) {
+      box.classList.add('is-portrait');
+      var cr = box.parentNode && box.parentNode.querySelector('.nw__credit');
+      if (cr) cr.remove();   // the outlet's photo credit no longer applies
+    }
+    im.src = fb;
+  };
   // Same sources as the Regional directory cards: Master photo, then the
   // country dashboard's Admin enrichment (cardExtras).
   function photoOf(sid) {
@@ -85,8 +99,12 @@
   function resolvePhotos() {
     N.items.forEach(function (it) {
       if (it.ownImg === undefined) it.ownImg = it.img || '';
-      it.img = it.ownImg; it.portrait = false; it.faces = null;
-      if (it.img || !it.ppl || !it.ppl.length) return;
+      it.img = it.ownImg; it.portrait = false; it.faces = null; it.fb = '';
+      if (!it.ppl || !it.ppl.length) return;
+      if (it.img) {
+        for (var i = 0; i < it.ppl.length && !it.fb; i++) it.fb = photoOf(it.ppl[i][1]);
+        return;
+      }
       // One person listed in two databases (for example Fiji and Tonga) is one face.
       var seen = {}, faces = [];
       it.ppl.forEach(function (p) {
@@ -105,7 +123,8 @@
     if (it.faces && it.faces.length > 1 && (cls !== 'nw__av' || it.faces.some(function (x) { return x.img; }))) return splitHtml(it, cls);
     var ini = '<span class="' + cls + '__ini">' + esc(initials(it.full || it.name)) + '</span>';
     if (!it.img) return '<span class="' + cls + ' is-ini">' + ini + '</span>';
-    return '<span class="' + cls + (it.portrait ? ' is-portrait' : '') + '">' + ini + '<img src="' + esc(it.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>';
+    return '<span class="' + cls + (it.portrait ? ' is-portrait' : '') + '">' + ini + '<img src="' + esc(it.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+      (it.fb && it.fb !== it.img ? ' data-fb="' + esc(it.fb) + '" onerror="window.__vlNewsImgErr(this)"' : ' onerror="this.remove()"') + '></span>';
   }
   function splitHtml(it, cls) {
     var f = it.faces;

@@ -52,6 +52,20 @@
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   var N = null, bySid = {}, loading = null;
+  // A story's own image that fails to load (broken or mistyped link) falls
+  // back to the scholar's profile photo, then to initials.
+  if (!window.__vlNewsImgErr) window.__vlNewsImgErr = function (im) {
+    var fb = im.getAttribute('data-fb');
+    if (!fb) { im.remove(); return; }
+    im.removeAttribute('data-fb');
+    var box = im.parentNode;
+    if (box && box.classList) {
+      box.classList.add('is-portrait');
+      var cr = box.parentNode && box.parentNode.querySelector('.nw__credit');
+      if (cr) cr.remove();   // the outlet's photo credit no longer applies
+    }
+    im.src = fb;
+  };
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -99,7 +113,8 @@
     if (it.faces && it.faces.length > 1 && (cls !== 'nw__av' || it.faces.some(function (x) { return x.img; }))) return splitHtml(it, cls);
     var ini = '<span class="' + cls + '__ini">' + esc(initials(it.name)) + '</span>';
     if (!it.img) return '<span class="' + cls + ' is-ini">' + ini + '</span>';
-    return '<span class="' + cls + (it.portrait ? ' is-portrait' : '') + '">' + ini + '<img src="' + esc(it.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>';
+    return '<span class="' + cls + (it.portrait ? ' is-portrait' : '') + '">' + ini + '<img src="' + esc(it.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+      (it.fb && it.fb !== it.img ? ' data-fb="' + esc(it.fb) + '" onerror="window.__vlNewsImgErr(this)"' : ' onerror="this.remove()"') + '></span>';
   }
 
   // One tile per scholar: photo when it loads, initials otherwise.
@@ -119,7 +134,8 @@
 
   // Stories without their own image show the scholar's profile photo.
   function addPhotos(gate, doc) {
-    var need = doc.items.some(function (it) { return it.sid && !it.img; });
+    // Stories with their own image also get the photo, as a fallback.
+    var need = doc.items.some(function (it) { return it.sid; });
     if (!need) return Promise.resolve();
     var none = function () { return null; };
     return Promise.all([
@@ -148,7 +164,8 @@
           it.cardFaces = it.sids.filter(function (id) { var k = String(id).toUpperCase(); if (seenF[k]) return false; seenF[k] = 1; return true; })
             .map(function (id) { return { img: photoOf(id) }; });
         }
-        if (it.img || !it.sid) return;
+        if (!it.sid) return;
+        if (it.img) { it.fb = photoOf(it.sid); return; }
         var u = photoOf(it.sid);
         if (u) { it.img = u; it.portrait = true; }
         if (!SPLIT || !Array.isArray(it.sids) || it.sids.length < 2) return;
@@ -247,8 +264,10 @@
   // Institution-country flag and coloured 2-letter pill, as in the Panel D List view.
   var I2 = { FJI: 'FJ', NZL: 'NZ', AUS: 'AU', USA: 'US', GBR: 'UK', CAN: 'CA', PNG: 'PG', TON: 'TO', SLB: 'SB', WSM: 'WS', VUT: 'VU', KIR: 'KI', TUV: 'TV',
     NRU: 'NR', COK: 'CK', NIU: 'NU', MHL: 'MH', FSM: 'FM', PLW: 'PW', IRL: 'IE', JPN: 'JP', CHN: 'CN', TWN: 'TW', KOR: 'KR', IND: 'IN', MYS: 'MY', SGP: 'SG',
-    IDN: 'ID', PHL: 'PH', THA: 'TH', CHE: 'CH', ITA: 'IT', DEU: 'DE', FRA: 'FR', NLD: 'NL', NOR: 'NO', SWE: 'SE', ESP: 'ES', ZAF: 'ZA' };
-  var UNI_FLAGS = 'au ca ch ck cn de es fj fm fr gb id ie in it jp ki kr mh mt my nl no nr nu nz pg ph pw sb se sg th to tv tw us vu ws za'.split(' ');
+    IDN: 'ID', PHL: 'PH', THA: 'TH', CHE: 'CH', ITA: 'IT', DEU: 'DE', FRA: 'FR', NLD: 'NL', NOR: 'NO', SWE: 'SE', ESP: 'ES', ZAF: 'ZA',
+    GUM: 'GU', NCL: 'NC', PYF: 'PF', ASM: 'AS', ARE: 'AE', CUB: 'CU', BRA: 'BR', KEN: 'KE', AUT: 'AT', BEL: 'BE', DNK: 'DK' };
+  // Every country above has a flag image in img/regional/flags-uni/ (flagcdn.com w80 PNGs).
+  var UNI_FLAGS = 'ae as at au be br ca ch ck cn cu de dk es fj fm fr gb gu id ie in it jp ke ki kr mh mt my nc nl no nr nu nz pf pg ph pw sb se sg th to tv tw us vu ws za'.split(' ');
   var UC_PILL = { US: ['#F6BB1F', '#1a1206'], NZ: ['#1E8AE0', '#fff'], AU: ['#F07A3A', '#1a0b04'], UK: ['#6A47C9', '#fff'], FJ: ['#3BB273', '#04140b'], CA: ['#E0393E', '#fff'], PG: ['#8B4A22', '#fff'], MT: ['#8FA3BF', '#0b1626'], FR: ['#4F6BED', '#fff'] };
   function cc2(pr) { var c = cc(pr); return c ? (I2[c] || '') : ''; }
   function uniFlag(c2, cls) {
