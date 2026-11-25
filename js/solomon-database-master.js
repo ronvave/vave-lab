@@ -4682,6 +4682,7 @@
       const api = {
         open() {
           dropdowns.forEach(d => { if (d !== api) d.close(); });
+          if (typeof api.onOpen === 'function') api.onOpen();
           panel.hidden = false;
           btn.setAttribute('aria-expanded', 'true');
           document.addEventListener('mousedown', outside, true);
@@ -4749,7 +4750,7 @@
         });
       });
       // Initial province column: reflect current selection.
-      renderProvList(state.worldConfFilter || 'Central');
+      renderProvList(null); // collapsed until a parent is hovered
     }
 
     function renderProvList(confKey) {
@@ -4889,7 +4890,7 @@
         });
       });
       // Populate the right column with a hint on first render.
-      renderWorkInstList(state.worldWorkCountry || '');
+      renderWorkInstList('');
     }
 
     function renderWorkInstList(country) {
@@ -5074,10 +5075,8 @@
           regionDd && regionDd.close();
         });
       });
-      // Default the middle column to the first available region on open.
-      if (!hoveredRegion && regionRows.length) {
-        hoveredRegion = regionRows[0].region;
-      }
+      // Collapsed on open: countries/universities appear only on hover.
+      hoveredRegion = null; hoveredCountry = null;
       renderRegionCountryList(hoveredRegion);
       renderRegionUniList(hoveredCountry);
     }
@@ -5227,6 +5226,10 @@
     renderSectorList();
     renderWorkCountryList();
     renderRegionList();
+    // Re-render on open so sub-columns start collapsed each time.
+    if (confDd) confDd.onOpen = renderConfList;
+    if (typeof workDd !== 'undefined' && workDd) workDd.onOpen = renderWorkCountryList;
+    if (regionDd) regionDd.onOpen = renderRegionList;
     refreshConfDropdownUi();
     refreshSectorDropdownUi();
     refreshWorkDropdownUi();
@@ -7923,11 +7926,8 @@
       positionPanelBelow(root, panel);
       panel.classList.add('is-visible');
       root.classList.add('is-open');
-      // Default to first parent if no hover yet
-      if (!hoveredParent) {
-        const parents = filtered ? filtered.parents : [...tree.keys()];
-        if (parents.length) setHoveredParent(parents[0]);
-      }
+      // Collapsed on open (children appear on hover); a typed search still previews its first match.
+      setHoveredParent(filtered && filtered.parents.length ? filtered.parents[0] : null);
       document.addEventListener('mousedown', closeOnOutside, true);
       document.addEventListener('keydown', onEsc);
     }

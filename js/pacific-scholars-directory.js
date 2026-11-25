@@ -335,7 +335,7 @@
     };
     const close = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); closeSubs(); };
     box._close = close;
-    btn.addEventListener('click', () => { const open = pop.hidden; document.querySelectorAll('#ps-dir .cmenu').forEach(m => m._close && m._close()); if (open) { pop.hidden = false; btn.setAttribute('aria-expanded', 'true'); pop.style.left = ''; pop.style.right = ''; if (pop.getBoundingClientRect().right > innerWidth - 8) { pop.style.left = 'auto'; pop.style.right = '0'; } const cur = F[k] && F[k] !== NONE ? box.querySelector(`.cmenu__reg[data-reg="${CSS.escape(F[k].split('|')[0])}"]`) : null; if (cur) openSub(cur); (pop.querySelector('.cmenu__item')).focus(); } });
+    btn.addEventListener('click', () => { const open = pop.hidden; document.querySelectorAll('#ps-dir .cmenu').forEach(m => m._close && m._close()); if (open) { pop.hidden = false; btn.setAttribute('aria-expanded', 'true'); pop.style.left = ''; pop.style.right = ''; if (pop.getBoundingClientRect().right > innerWidth - 8) { pop.style.left = 'auto'; pop.style.right = '0'; } /* sub-menus stay collapsed until a region is hovered */ (pop.querySelector('.cmenu__item')).focus(); } });
     box.querySelectorAll('.cmenu__reg').forEach(reg => {
       reg.addEventListener('click', () => (reg.getAttribute('aria-expanded') === 'true' && innerWidth < 640) ? closeSubs() : openSub(reg));
       reg.addEventListener('mouseenter', () => { if (matchMedia('(hover:hover)').matches && innerWidth >= 640) openSub(reg); });

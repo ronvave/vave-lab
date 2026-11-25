@@ -1047,6 +1047,9 @@
       overflow: hidden;
     }
     .db-map-fs-conf__panel[hidden] { display: none; }
+    /* Hover-only drilldown: hide sub-columns until a parent row is hovered. */
+    .db-map-fs-conf__panel:not([data-db-b3-region-panel]) > .db-map-fs-conf__col:not(.db-map-fs-conf__col--conf):not(:has(.db-map-fs-conf__row)) { display: none; }
+    .db-map-fs-conf__panel:not([data-db-b3-region-panel]) > .db-map-fs-conf__col--conf:only-child, .db-map-fs-conf__panel:not([data-db-b3-region-panel]):not(:has(> .db-map-fs-conf__col:not(.db-map-fs-conf__col--conf) .db-map-fs-conf__row)) > .db-map-fs-conf__col--conf { border-right: 0; }
     .db-map-fs-conf__col {
       display: flex;
       flex-direction: column;
@@ -3714,6 +3717,11 @@
       display: flex; flex-direction: column; padding: 8px 0;
       min-width: 220px; max-height: 360px; overflow-y: auto;
     }
+    /* Hover-only drilldown: hide empty sub-columns so only the first list shows on open. */
+    .dsf-combo-panel > .dsf-combo-col:not(.dsf-combo-col--first):has(> [data-parent-col]:empty),
+    .dsf-combo-panel > .dsf-combo-col:not(.dsf-combo-col--first):has(> [data-child-col]:empty) { display: none; }
+    .dsf-combo-panel:has(> .dsf-combo-col > [data-child-col]:empty) { min-width: 0; }
+    .dsf-combo-panel:not(:has(> .dsf-combo-col:not(.dsf-combo-col--first) > :not(:empty):is([data-parent-col],[data-child-col]))) > .dsf-combo-col--first { border-right: 0; }
     .dsf-combo-col--first { border-right: 1px solid var(--color-border, #d8d0b0); background: #fdfbf0; }
     .dsf-combo-col__head {
       font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
@@ -5259,7 +5267,7 @@
 <link rel="stylesheet" href="css/scholar-card-buttons.css?v=ef8453b7">
 <link rel="stylesheet" href="css/panel-d-firsts.css?v=8d7f5f75">
 <script src="js/b5-location-table.js?v=c774fc03" defer></script>
-<script src="js/solomon-database-master.js?v=aabba6e5" defer></script>
+<script src="js/solomon-database-master.js?v=dc836877" defer></script>
 <script src="js/b2-pathways.js?v=2d86f6eb" defer></script>
 <script src="js/solomon-short-disciplines.js?v=cb602c3a" defer></script>
 <script src="js/short-disciplines-style.js?v=b8e766e3" defer></script>
