@@ -87,6 +87,9 @@ TARGETS = {
     'vanuatu-embedded': dict(src='vanuatu-collaborator-bundle.json.enc', pw='VAVELAB_VANUATU_COLLABORATOR_PASSCODE',
                              out='vanuatu-embedded.viewer.enc', key=None, fixed_key=VANUATU_EMBEDDED_KEY,
                              meta='vanuatu-embedded-viewer-access.json', extra=None),
+    'event': dict(src='regional-scholars.json.enc', pw='REGIONAL_PASSCODE',
+                  out='regional-scholars-event.viewer.enc', key='REGIONAL_EVENT_VIEWER',
+                  meta='regional-event-viewer-access.json', extra=None),
     'countries': dict(src='regional-scholars.json.enc', pw='REGIONAL_PASSCODE',
                       out=None, key='REGIONAL_COUNTRY_VIEWERS',
                       meta='regional-country-viewer-access.json', extra=None),
@@ -215,9 +218,29 @@ class Target:
         return 'updated' if self.write_viewer(plain, key) else 'unchanged'
 
 
+class EventTarget(Target):
+    """One-off event link (#view=<key>&ev=1) with its own expiry file.
+
+    REGIONAL_EVENT_VIEWER is JSON {"key": "...", "links": {"FJI": "...", ...}};
+    Panel A1 links only the dashboards in "links" (see restrict()).
+    """
+    def plain_and_key(self):
+        try:
+            cfg = json.loads(os.environ.get('REGIONAL_EVENT_VIEWER') or '')
+        except ValueError:
+            sys.exit('REGIONAL_EVENT_VIEWER secret is missing or not JSON')
+        key = cfg.get('key', '')
+        if len(key) < 24:
+            sys.exit('REGIONAL_EVENT_VIEWER key is missing or too short')
+        plain = opens(self.src.read_bytes(), os.environ.get('REGIONAL_PASSCODE', ''))
+        if plain is None:
+            sys.exit('REGIONAL_PASSCODE does not open regional-scholars.json.enc')
+        return restrict(plain, cfg.get('links') or {}), key
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 3 or sys.argv[2] not in ('create', 'sync', 'remove') or sys.argv[1] not in (*TARGETS, 'all'):
-        sys.exit('usage: regional_viewer_access.py regional|vanuatu|vanuatu-embedded|countries|all create|sync|remove')
+        sys.exit('usage: regional_viewer_access.py regional|vanuatu|vanuatu-embedded|event|countries|all create|sync|remove')
     names = list(TARGETS) if sys.argv[1] == 'all' else [sys.argv[1]]
     for n in names:
-        print(f'{n}: ' + getattr((CountryTargets if n == 'countries' else Target)(n), sys.argv[2])())
+        print(f'{n}: ' + getattr((CountryTargets if n == 'countries' else EventTarget if n == 'event' else Target)(n), sys.argv[2])())

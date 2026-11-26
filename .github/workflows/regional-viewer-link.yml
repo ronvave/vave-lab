@@ -26,7 +26,7 @@ on:
       target:
         description: 'Which dashboard'
         type: choice
-        options: [regional, vanuatu, vanuatu-embedded, countries, all]
+        options: [regional, vanuatu, vanuatu-embedded, event, countries, all]
         default: all
       action:
         description: 'create or remove'
@@ -72,6 +72,7 @@ jobs:
           VAVELAB_VANUATU_COLLABORATOR_PASSCODE: ${{ secrets.VAVELAB_VANUATU_COLLABORATOR_PASSCODE }}
           VANUATU_VIEWER_KEY: ${{ secrets.VANUATU_VIEWER_KEY }}
           REGIONAL_COUNTRY_VIEWERS: ${{ secrets.REGIONAL_COUNTRY_VIEWERS }}
+          REGIONAL_EVENT_VIEWER: ${{ secrets.REGIONAL_EVENT_VIEWER }}
           VIEWER_EXPIRES: ${{ github.event.inputs.expires }}
         run: |
           set -euo pipefail

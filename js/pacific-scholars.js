@@ -111,8 +111,11 @@
     // Country viewer links (&lc=HAW) open that country's own copy, where A1
     // links only that country's dashboard and Fiji's.
     const lc = (/(?:^|[#&])lc=([A-Z]{3})(?:&|$)/.exec(location.hash) || [])[1];
-    const metaUrl = lc ? 'data/regional-country-viewer-access.json' : 'data/regional-viewer-access.json';
-    const encUrl = lc ? `data/regional-scholars-${lc.toLowerCase()}.viewer.enc` : 'data/regional-scholars.viewer.enc';
+    // Event viewer links (&ev=1) open a separate copy with its own expiry, so
+    // ending an event link never touches the other viewer links.
+    const ev = /(?:^|[#&])ev=1(?:&|$)/.test(location.hash);
+    const metaUrl = ev ? 'data/regional-event-viewer-access.json' : lc ? 'data/regional-country-viewer-access.json' : 'data/regional-viewer-access.json';
+    const encUrl = ev ? 'data/regional-scholars-event.viewer.enc' : lc ? `data/regional-scholars-${lc.toLowerCase()}.viewer.enc` : 'data/regional-scholars.viewer.enc';
     err.textContent = 'Opening viewer link…';
     let msg = 'This viewer link has ended. Please ask for a new link.';
     try {
